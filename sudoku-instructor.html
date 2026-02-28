@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Instructor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 15px 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 10px 0 15px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 .icon {
+            font-size: 1.6rem;
+            -webkit-text-fill-color: initial;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        /* Main layout */
+        .main {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+            max-width: 1300px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 1000px) {
+            .main { grid-template-columns: 1fr; }
+            .steps-panel { max-height: 300px; }
+        }
+
+        /* Left panel - Grid */
+        .grid-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .grid-card {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        /* Sudoku Grid */
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 42px);
+            grid-template-rows: repeat(9, 42px);
+            gap: 1px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            padding: 2px;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .sudoku-grid .cell {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            background: rgba(30, 30, 60, 0.8);
+            color: #fff;
+            border: none;
+            outline: none;
+            text-align: center;
+            transition: all 0.15s ease;
+            border-radius: 4px;
+        }
+
+        .sudoku-grid input.cell {
+            cursor: text;
+            caret-color: #f5576c;
+        }
+
+        .sudoku-grid input.cell:focus {
+            background: rgba(79, 172, 254, 0.2);
+            box-shadow: inset 0 0 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .sudoku-grid .cell.given {
+            background: rgba(20, 20, 50, 0.9);
+            color: #f5576c;
+        }
+
+        .sudoku-grid .cell.solved {
+            color: #4ade80;
+            animation: popIn 0.3s ease;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
+
+        .sudoku-grid .cell.highlight {
+            background: rgba(74, 222, 128, 0.25) !important;
+            box-shadow: inset 0 0 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .sudoku-grid .cell.error {
+            background: rgba(255, 107, 107, 0.3) !important;
+            color: #ff6b6b;
+            animation: errorShake 0.4s ease;
+        }
+
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-3px); }
+            40%, 80% { transform: translateX(3px); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.15); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 3x3 box borders */
+        .sudoku-grid .cell:nth-child(3n) { border-right: 2px solid rgba(245, 87, 108, 0.6); }
+        .sudoku-grid .cell:nth-child(n+19):nth-child(-n+27),
+        .sudoku-grid .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid rgba(245, 87, 108, 0.6); }
+        .sudoku-grid .cell:nth-child(9n) { border-right: none; }
+        .sudoku-grid .cell:nth-child(n+73) { border-bottom: none; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Options row */
+        .options-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .option-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .option-card label {
+            display: block;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .option-card select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(30, 30, 60, 0.8);
+            color: white;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .option-card select:focus {
+            outline: none;
+            border-color: rgba(245, 87, 108, 0.5);
+        }
+
+        /* Speed slider */
+        .speed-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-option input[type="range"] {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .speed-option input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(245, 87, 108, 0.4);
+        }
+
+        .speed-option .speed-val {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            min-width: 35px;
+        }
+
+        /* Toggle switch */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+        }
+
+        .toggle-row .text {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .toggle-row .subtext {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 24px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Right panel - Steps */
+        .steps-panel {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .steps-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .steps-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .steps-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            min-height: 0;
+        }
+
+        .steps-container::-webkit-scrollbar { width: 6px; }
+        .steps-container::-webkit-scrollbar-track { background: transparent; }
+        .steps-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        .steps-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+        .empty-state p { font-size: 13px; line-height: 1.6; }
+
+        /* Info box */
+        .info-box {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.1));
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .info-box strong { color: #4facfe; }
+
+        /* Step card */
+        .step {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            animation: stepSlide 0.3s ease;
+        }
+
+        @keyframes stepSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .step-badge {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.2));
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .step-result {
+            margin-left: auto;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .step-result .cell-ref { color: #4facfe; font-weight: 600; }
+        .step-result .value { color: #f5576c; font-weight: 700; font-size: 15px; }
+
+        .step-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .step-content strong { color: rgba(255,255,255,0.9); }
+        .step-content .cell-ref {
+            background: rgba(79, 172, 254, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #4facfe;
+            font-weight: 600;
+            font-family: monospace;
+        }
+        .step-content .value { color: #f5576c; font-weight: 700; }
+
+        /* Elimination list */
+        .elimination-list {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin: 10px 0;
+        }
+
+        .elimination-list .title {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .elimination-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .elimination-item .num {
+            width: 22px;
+            height: 22px;
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            text-decoration: line-through;
+        }
+
+        .elimination-item .reason { color: rgba(255,255,255,0.6); }
+        .elimination-item .loc { color: #fbbf24; }
+
+        /* Candidates display */
+        .candidates-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .candidates-display .label { font-size: 11px; color: rgba(255,255,255,0.5); margin-right: 5px; }
+
+        .candidate-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .candidate-num.eliminated {
+            background: rgba(255, 107, 107, 0.15);
+            color: rgba(255, 107, 107, 0.5);
+            text-decoration: line-through;
+        }
+
+        .candidate-num.final {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #000;
+            transform: scale(1.15);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+        }
+
+        /* Conclusion */
+        .conclusion {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1));
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        /* Other cells blocked */
+        .other-cells-blocked {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin: 10px 0;
+        }
+
+        .other-cells-blocked .title {
+            font-size: 11px;
+            color: #fbbf24;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .blocked-cell-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin: 4px 0;
+        }
+
+        .blocked-cell-item .cell-name {
+            background: rgba(79, 172, 254, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #4facfe;
+            font-family: monospace;
+        }
+
+        /* Summary */
+        .summary {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05));
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .summary h3 {
+            font-size: 14px;
+            color: #4ade80;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .technique-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .technique-count {
+            background: rgba(255,255,255,0.05);
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .technique-count .count {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        /* Error popup */
+        .error-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+        }
+
+        .error-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 380px;
+            width: 90%;
+            z-index: 1000;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: popupIn 0.3s ease;
+        }
+
+        @keyframes popupIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .error-popup h3 {
+            color: #ff6b6b;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error-popup .error-cell {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .error-popup .cell-name { color: #4facfe; font-weight: 700; font-size: 18px; }
+        .error-popup .attempted { color: #ff6b6b; font-weight: 700; font-size: 22px; }
+
+        .error-popup .conflict-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 3px solid #ff6b6b;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .error-popup .conflict-item .icon { font-size: 18px; }
+        .error-popup .highlight { color: #fbbf24; font-weight: 600; }
+        .error-popup .existing { color: #4ade80; font-weight: 600; }
+
+        .error-popup .tip {
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            margin: 15px 0;
+        }
+
+        .error-popup .close-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .error-popup .close-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* Error message */
+        .error-message {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            color: #ff6b6b;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1><span class="icon">🧩</span> Sudoku Instructor</h1>
+            <p>Learn to solve puzzles with step-by-step explanations</p>
+        </header>
+
+        <main class="main">
+            <div class="grid-panel">
+                <div class="grid-card">
+                    <div class="sudoku-grid" id="grid"></div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="solvePuzzle()">🎓 Teach Me</button>
+                    <button class="btn btn-secondary" onclick="nextStep()" id="nextBtn" disabled>➡️ Next</button>
+                    <button class="btn btn-secondary" onclick="autoSolve()" id="autoBtn" disabled>▶️ Auto</button>
+                    <button class="btn btn-secondary" onclick="clearGrid()">🗑️ Clear</button>
+                </div>
+
+                <div class="options-row">
+                    <div class="option-card">
+                        <label>Puzzle</label>
+                        <select onchange="loadPreset(this.value)" id="presetSelect">
+                            <option value="">Select preset...</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="option-card">
+                        <label>Speed</label>
+                        <div class="speed-option">
+                            <input type="range" min="200" max="2500" value="1000" id="speedSlider">
+                            <span class="speed-val" id="speedLabel">1.0s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <div>
+                        <div class="text">Validate Input</div>
+                        <div class="subtext">Show why wrong entries are invalid</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="validateToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="steps-panel">
+                <div class="steps-header">
+                    <span>📚</span>
+                    <h2>Solution Steps</h2>
+                </div>
+                <div class="steps-container" id="stepsContainer">
+                    <div class="empty-state">
+                        <div class="icon">🎯</div>
+                        <p>Enter a puzzle and click "Teach Me" to see detailed step-by-step solutions with explanations.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ========== DATA ==========
+        const presets = {
+            easy: [
+                [5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],
+                [8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],
+                [0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]
+            ],
+            medium: [
+                [0,0,0,6,0,0,4,0,0],[7,0,0,0,0,3,6,0,0],[0,0,0,0,9,1,0,8,0],
+                [0,0,0,0,0,0,0,0,0],[0,5,0,1,8,0,0,0,3],[0,0,0,3,0,6,0,4,5],
+                [0,4,0,2,0,0,0,6,0],[9,0,3,0,0,0,0,0,0],[0,2,0,0,0,0,1,0,0]
+            ],
+            hard: [
+                [0,0,0,0,0,0,0,1,2],[0,0,0,0,3,5,0,0,0],[0,0,0,6,0,0,0,7,0],
+                [7,0,0,0,0,0,3,0,0],[0,0,0,4,0,0,8,0,0],[1,0,0,0,0,0,0,0,0],
+                [0,0,0,1,2,0,0,0,0],[0,8,0,0,0,0,0,4,0],[0,5,0,0,0,0,6,0,0]
+            ]
+        };
+
+        let grid = Array(9).fill(null).map(() => Array(9).fill(0));
+        let givenCells = new Set();
+        let steps = [];
+        let currentStep = 0;
+        let isAutoPlaying = false;
+        let autoPlayInterval = null;
+        let validateInput = true;
+
+        // ========== HELPERS ==========
+        const getRowName = r => r + 1;
+        const getColName = c => String.fromCharCode(65 + c);
+        const getCellName = (r, c) => `${getColName(c)}${getRowName(r)}`;
+        const deepCopy = arr => arr.map(row => [...row]);
+
+        function getBoxName(row, col) {
+            const boxNum = Math.floor(row / 3) * 3 + Math.floor(col / 3) + 1;
+            return `Box ${boxNum}`;
+        }
+
+        // ========== GRID ==========
+        function initGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+
+            for (let i = 0; i < 81; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cell';
+                input.maxLength = 1;
+                input.dataset.index = i;
+
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    if (!/^[1-9]$/.test(val)) {
+                        e.target.value = '';
+                        updateGridFromInput();
+                        return;
+                    }
+
+                    const idx = parseInt(e.target.dataset.index);
+                    const row = Math.floor(idx / 9), col = idx % 9;
+                    const num = parseInt(val);
+
+                    if (validateInput && val) {
+                        const conflicts = findConflicts(row, col, num);
+                        if (conflicts.length > 0) {
+                            e.target.value = '';
+                            e.target.classList.add('error');
+                            setTimeout(() => e.target.classList.remove('error'), 400);
+                            showErrorPopup(row, col, num, conflicts);
+                            return;
+                        }
+                    }
+                    updateGridFromInput();
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    const moves = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 9, ArrowUp: -9 };
+                    if (moves[e.key]) {
+                        const newIdx = i + moves[e.key];
+                        if (newIdx >= 0 && newIdx < 81) document.querySelectorAll('.cell')[newIdx].focus();
+                    }
+                });
+
+                gridEl.appendChild(input);
+            }
+        }
+
+        function updateGridFromInput() {
+            const cells = document.querySelectorAll('.cell');
+            grid = Array(9).fill(null).map(() => Array(9).fill(0));
+            givenCells.clear();
+            cells.forEach((cell, i) => {
+                const row = Math.floor(i / 9), col = i % 9;
+                const val = parseInt(cell.value) || 0;
+                grid[row][col] = val;
+                if (val > 0) givenCells.add(`${row},${col}`);
+            });
+        }
+
+        function renderGrid() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, i) => {
+                const row = Math.floor(i / 9), col = i % 9;
+                cell.value = grid[row][col] || '';
+                cell.classList.remove('given', 'solved', 'highlight', 'error');
+                if (givenCells.has(`${row},${col}`)) cell.classList.add('given');
+            });
+        }
+
+        function highlightCell(row, col) {
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+            document.querySelectorAll('.cell')[row * 9 + col].classList.add('highlight');
+        }
+
+        function markSolved(row, col) {
+            document.querySelectorAll('.cell')[row * 9 + col].classList.add('solved');
+        }
+
+        // ========== VALIDATION ==========
+        function findConflicts(row, col, num) {
+            const conflicts = [];
+            const cells = document.querySelectorAll('.cell');
+
+            for (let c = 0; c < 9; c++) {
+                if (c !== col && parseInt(cells[row * 9 + c].value) === num) {
+                    conflicts.push({
+                        type: 'row', row, col: c,
+                        detail: `There's already a <span class="existing">${num}</span> in Row ${getRowName(row)} at cell <span class="highlight">${getCellName(row, c)}</span>`
+                    });
+                }
+            }
+
+            for (let r = 0; r < 9; r++) {
+                if (r !== row && parseInt(cells[r * 9 + col].value) === num) {
+                    conflicts.push({
+                        type: 'column', row: r, col,
+                        detail: `There's already a <span class="existing">${num}</span> in Column ${getColName(col)} at cell <span class="highlight">${getCellName(r, col)}</span>`
+                    });
+                }
+            }
+
+            const boxR = Math.floor(row / 3) * 3, boxC = Math.floor(col / 3) * 3;
+            for (let r = boxR; r < boxR + 3; r++) {
+                for (let c = boxC; c < boxC + 3; c++) {
+                    if ((r !== row || c !== col) && parseInt(cells[r * 9 + c].value) === num) {
+                        conflicts.push({
+                            type: 'box', row: r, col: c,
+                            detail: `There's already a <span class="existing">${num}</span> in the 3×3 box at cell <span class="highlight">${getCellName(r, c)}</span>`
+                        });
+                    }
+                }
+            }
+            return conflicts;
+        }
+
+        function showErrorPopup(row, col, num, conflicts) {
+            closeErrorPopup();
+            const icons = { row: '↔️', column: '↕️', box: '⬜' };
+
+            const html = `
+                <div class="error-popup-overlay" onclick="closeErrorPopup()"></div>
+                <div class="error-popup">
+                    <h3>❌ Invalid Entry</h3>
+                    <div class="error-cell">
+                        <span>Cell:</span>
+                        <span class="cell-name">${getCellName(row, col)}</span>
+                        <span>→</span>
+                        <span class="attempted">${num}</span>
+                    </div>
+                    ${conflicts.map(c => `
+                        <div class="conflict-item">
+                            <span class="icon">${icons[c.type]}</span>
+                            <div>${c.detail}</div>
+                        </div>
+                    `).join('')}
+                    <div class="tip">💡 Each number 1-9 can only appear once in each row, column, and 3×3 box.</div>
+                    <button class="close-btn" onclick="closeErrorPopup()">Got it!</button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+
+            conflicts.forEach(c => document.querySelectorAll('.cell')[c.row * 9 + c.col].classList.add('error'));
+        }
+
+        function closeErrorPopup() {
+            document.querySelector('.error-popup')?.remove();
+            document.querySelector('.error-popup-overlay')?.remove();
+            document.querySelectorAll('.cell.error').forEach(c => c.classList.remove('error'));
+        }
+
+        // ========== SUDOKU SOLVER ==========
+        function isValid(grid, row, col, num) {
+            for (let c = 0; c < 9; c++) if (grid[row][c] === num) return false;
+            for (let r = 0; r < 9; r++) if (grid[r][col] === num) return false;
+            const boxR = Math.floor(row / 3) * 3, boxC = Math.floor(col / 3) * 3;
+            for (let r = boxR; r < boxR + 3; r++)
+                for (let c = boxC; c < boxC + 3; c++)
+                    if (grid[r][c] === num) return false;
+            return true;
+        }
+
+        function getCandidates(grid, row, col) {
+            if (grid[row][col] !== 0) return [];
+            return [1,2,3,4,5,6,7,8,9].filter(n => isValid(grid, row, col, n));
+        }
+
+        function getAllCandidates(grid) {
+            return Array(9).fill(null).map((_, r) =>
+                Array(9).fill(null).map((_, c) => getCandidates(grid, r, c))
+            );
+        }
+
+        function getEliminationDetails(grid, row, col) {
+            const eliminations = [];
+            for (let num = 1; num <= 9; num++) {
+                let blocked = false, reason = '';
+
+                for (let c = 0; c < 9; c++) {
+                    if (grid[row][c] === num) {
+                        blocked = true;
+                        reason = `in Row ${getRowName(row)} at ${getCellName(row, c)}`;
+                        break;
+                    }
+                }
+
+                if (!blocked) {
+                    for (let r = 0; r < 9; r++) {
+                        if (grid[r][col] === num) {
+                            blocked = true;
+                            reason = `in Column ${getColName(col)} at ${getCellName(r, col)}`;
+                            break;
+                        }
+                    }
+                }
+
+                if (!blocked) {
+                    const boxR = Math.floor(row / 3) * 3, boxC = Math.floor(col / 3) * 3;
+                    for (let r = boxR; r < boxR + 3; r++) {
+                        for (let c = boxC; c < boxC + 3; c++) {
+                            if (grid[r][c] === num) {
+                                blocked = true;
+                                reason = `in the box at ${getCellName(r, c)}`;
+                                break;
+                            }
+                        }
+                        if (blocked) break;
+                    }
+                }
+
+                eliminations.push({ num, blocked, reason });
+            }
+            return eliminations;
+        }
+
+        function findNakedSingle(grid, candidates) {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (grid[r][c] === 0 && candidates[r][c].length === 1) {
+                        const num = candidates[r][c][0];
+                        const elims = getEliminationDetails(grid, r, c);
+
+                        let elimHtml = '<div class="elimination-list"><div class="title">🔍 Checking numbers 1-9:</div>';
+                        elims.filter(e => e.blocked).forEach(e => {
+                            elimHtml += `<div class="elimination-item"><span class="num">${e.num}</span><span class="reason">Can't be ${e.num} — <span class="loc">${e.reason}</span></span></div>`;
+                        });
+                        elimHtml += '</div>';
+
+                        let candHtml = '<div class="candidates-display"><span class="label">Result:</span>';
+                        for (let n = 1; n <= 9; n++) {
+                            candHtml += `<span class="candidate-num ${n === num ? 'final' : 'eliminated'}">${n}</span>`;
+                        }
+                        candHtml += '</div>';
+
+                        return {
+                            technique: 'Naked Single', row: r, col: c, value: num,
+                            explanation: `<p>Cell <span class="cell-ref">${getCellName(r, c)}</span>:</p>${elimHtml}${candHtml}
+                                <div class="conclusion">✅ Only <span class="value">${num}</span> is possible!</div>`
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findHiddenSingle(grid, candidates) {
+            // Rows
+            for (let r = 0; r < 9; r++) {
+                for (let num = 1; num <= 9; num++) {
+                    if (grid[r].includes(num)) continue;
+                    const pos = [];
+                    for (let c = 0; c < 9; c++) if (candidates[r][c].includes(num)) pos.push(c);
+                    if (pos.length === 1) {
+                        const c = pos[0];
+                        return {
+                            technique: 'Hidden Single (Row)', row: r, col: c, value: num,
+                            explanation: `<p>Looking for <span class="value">${num}</span> in Row ${getRowName(r)}:</p>
+                                <div class="conclusion">✅ Only cell <span class="cell-ref">${getCellName(r, c)}</span> can have ${num}!</div>`
+                        };
+                    }
+                }
+            }
+
+            // Columns
+            for (let c = 0; c < 9; c++) {
+                for (let num = 1; num <= 9; num++) {
+                    let inCol = false;
+                    for (let r = 0; r < 9; r++) if (grid[r][c] === num) inCol = true;
+                    if (inCol) continue;
+                    const pos = [];
+                    for (let r = 0; r < 9; r++) if (candidates[r][c].includes(num)) pos.push(r);
+                    if (pos.length === 1) {
+                        const r = pos[0];
+                        return {
+                            technique: 'Hidden Single (Column)', row: r, col: c, value: num,
+                            explanation: `<p>Looking for <span class="value">${num}</span> in Column ${getColName(c)}:</p>
+                                <div class="conclusion">✅ Only cell <span class="cell-ref">${getCellName(r, c)}</span> can have ${num}!</div>`
+                        };
+                    }
+                }
+            }
+
+            // Boxes
+            for (let boxR = 0; boxR < 3; boxR++) {
+                for (let boxC = 0; boxC < 3; boxC++) {
+                    for (let num = 1; num <= 9; num++) {
+                        let inBox = false;
+                        const startR = boxR * 3, startC = boxC * 3;
+                        for (let r = startR; r < startR + 3; r++)
+                            for (let c = startC; c < startC + 3; c++)
+                                if (grid[r][c] === num) inBox = true;
+                        if (inBox) continue;
+
+                        const pos = [];
+                        for (let r = startR; r < startR + 3; r++)
+                            for (let c = startC; c < startC + 3; c++)
+                                if (candidates[r][c].includes(num)) pos.push({ r, c });
+
+                        if (pos.length === 1) {
+                            const { r, c } = pos[0];
+                            return {
+                                technique: 'Hidden Single (Box)', row: r, col: c, value: num,
+                                explanation: `<p>Looking for <span class="value">${num}</span> in ${getBoxName(r, c)}:</p>
+                                    <div class="conclusion">✅ Only cell <span class="cell-ref">${getCellName(r, c)}</span> can have ${num}!</div>`
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function solveWithExplanations(initialGrid) {
+            const workingGrid = deepCopy(initialGrid);
+            const solutionSteps = [];
+            let stepNum = 0, changed = true;
+
+            while (changed) {
+                changed = false;
+                const candidates = getAllCandidates(workingGrid);
+
+                let complete = true;
+                for (let r = 0; r < 9; r++)
+                    for (let c = 0; c < 9; c++)
+                        if (workingGrid[r][c] === 0) complete = false;
+                if (complete) break;
+
+                let move = findNakedSingle(workingGrid, candidates) || findHiddenSingle(workingGrid, candidates);
+                if (move) {
+                    stepNum++;
+                    workingGrid[move.row][move.col] = move.value;
+                    solutionSteps.push({ stepNum, ...move });
+                    changed = true;
+                }
+            }
+
+            let empty = 0;
+            for (let r = 0; r < 9; r++)
+                for (let c = 0; c < 9; c++)
+                    if (workingGrid[r][c] === 0) empty++;
+
+            return { steps: solutionSteps, solved: empty === 0 };
+        }
+
+        function validatePuzzle(grid) {
+            for (let r = 0; r < 9; r++) {
+                const seen = new Set();
+                for (let c = 0; c < 9; c++) {
+                    if (grid[r][c] !== 0) {
+                        if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate in Row ${r + 1}` };
+                        seen.add(grid[r][c]);
+                    }
+                }
+            }
+            for (let c = 0; c < 9; c++) {
+                const seen = new Set();
+                for (let r = 0; r < 9; r++) {
+                    if (grid[r][c] !== 0) {
+                        if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate in Column ${getColName(c)}` };
+                        seen.add(grid[r][c]);
+                    }
+                }
+            }
+            return { valid: true };
+        }
+
+        // ========== UI ==========
+        function solvePuzzle() {
+            updateGridFromInput();
+            const validation = validatePuzzle(grid);
+            if (!validation.valid) { showError(validation.error); return; }
+
+            let hasNums = false;
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (grid[r][c] !== 0) hasNums = true;
+            if (!hasNums) { showError('Please enter a puzzle or select a preset.'); return; }
+
+            const result = solveWithExplanations(grid);
+            steps = result.steps;
+            currentStep = 0;
+
+            const container = document.getElementById('stepsContainer');
+            if (steps.length === 0) {
+                container.innerHTML = `<div class="error-message">Cannot solve with basic techniques. Try an easier puzzle.</div>`;
+                return;
+            }
+
+            container.innerHTML = `<div class="info-box"><strong>Ready!</strong> Found ${steps.length} steps. Click "Next" or "Auto" to learn.</div>`;
+            document.getElementById('nextBtn').disabled = false;
+            document.getElementById('autoBtn').disabled = false;
+
+            if (result.solved) {
+                const counts = {};
+                steps.forEach(s => {
+                    const t = s.technique.split(' (')[0];
+                    counts[t] = (counts[t] || 0) + 1;
+                });
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="summary" id="summary" style="display:none">
+                        <h3>🎉 Complete!</h3>
+                        <div class="technique-list">
+                            ${Object.entries(counts).map(([t, c]) => `
+                                <div class="technique-count"><span class="count">${c}</span><span>${t}</span></div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `);
+            }
+        }
+
+        function nextStep() {
+            if (currentStep >= steps.length) {
+                document.getElementById('nextBtn').disabled = true;
+                document.getElementById('autoBtn').disabled = true;
+                document.getElementById('summary')?.style.setProperty('display', 'block');
+                return;
+            }
+
+            const step = steps[currentStep];
+            grid[step.row][step.col] = step.value;
+            renderGrid();
+            highlightCell(step.row, step.col);
+            markSolved(step.row, step.col);
+
+            document.getElementById('stepsContainer').insertAdjacentHTML('beforeend', `
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-num">${step.stepNum}</span>
+                        <span class="step-badge">${step.technique}</span>
+                        <div class="step-result">
+                            <span class="cell-ref">${getCellName(step.row, step.col)}</span>
+                            <span>=</span>
+                            <span class="value">${step.value}</span>
+                        </div>
+                    </div>
+                    <div class="step-content">${step.explanation}</div>
+                </div>
+            `);
+
+            document.getElementById('stepsContainer').scrollTop = document.getElementById('stepsContainer').scrollHeight;
+            currentStep++;
+
+            if (currentStep >= steps.length) {
+                document.getElementById('nextBtn').disabled = true;
+                document.getElementById('autoBtn').disabled = true;
+                document.getElementById('summary')?.style.setProperty('display', 'block');
+            }
+        }
+
+        function autoSolve() {
+            if (isAutoPlaying) { stopAutoPlay(); return; }
+            isAutoPlaying = true;
+            document.getElementById('autoBtn').textContent = '⏸️ Pause';
+            document.getElementById('nextBtn').disabled = true;
+
+            const speed = parseInt(document.getElementById('speedSlider').value);
+            autoPlayInterval = setInterval(() => {
+                if (currentStep >= steps.length) { stopAutoPlay(); return; }
+                nextStep();
+            }, speed);
+        }
+
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+            if (autoPlayInterval) { clearInterval(autoPlayInterval); autoPlayInterval = null; }
+            document.getElementById('autoBtn').textContent = '▶️ Auto';
+            if (currentStep < steps.length) {
+                document.getElementById('nextBtn').disabled = false;
+                document.getElementById('autoBtn').disabled = false;
+            }
+        }
+
+        function loadPreset(name) {
+            if (!name || !presets[name]) return;
+            grid = deepCopy(presets[name]);
+            givenCells.clear();
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (grid[r][c] !== 0) givenCells.add(`${r},${c}`);
+            renderGrid();
+            resetSteps();
+        }
+
+        function clearGrid() {
+            grid = Array(9).fill(null).map(() => Array(9).fill(0));
+            givenCells.clear();
+            renderGrid();
+            resetSteps();
+            document.getElementById('presetSelect').value = '';
+        }
+
+        function resetSteps() {
+            stopAutoPlay();
+            steps = [];
+            currentStep = 0;
+            document.getElementById('stepsContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🎯</div>
+                    <p>Enter a puzzle and click "Teach Me" to see detailed step-by-step solutions.</p>
+                </div>`;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('autoBtn').disabled = true;
+        }
+
+        function showError(msg) {
+            document.getElementById('stepsContainer').innerHTML = `<div class="error-message">⚠️ ${msg}</div>`;
+        }
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            document.getElementById('speedLabel').textContent = (e.target.value / 1000).toFixed(1) + 's';
+            if (isAutoPlaying) { stopAutoPlay(); autoSolve(); }
+        });
+
+        document.getElementById('validateToggle').addEventListener('change', (e) => {
+            validateInput = e.target.checked;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeErrorPopup();
+        });
+
+        initGrid();
+    </script>
+</body>
+</html>

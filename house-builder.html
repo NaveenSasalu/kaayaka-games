@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wobbly House Builder 🏠</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #87CEEB 60%, #90EE90 60%, #228B22 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 50px #FFD700;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            animation: float 20s linear infinite;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        @keyframes float {
+            from { transform: translateX(-200px); }
+            to { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(180deg, #90EE90 0%, #228B22 100%);
+        }
+
+        .build-area {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 500px;
+            border: 3px dashed rgba(255,255,255,0.5);
+            border-bottom: none;
+        }
+
+        .foundation {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            height: 30px;
+            background: #808080;
+            border: 3px solid #404040;
+        }
+
+        .piece {
+            position: absolute;
+            cursor: grab;
+            transition: box-shadow 0.2s;
+            z-index: 10;
+        }
+
+        .piece:hover {
+            box-shadow: 0 0 20px rgba(255,255,0,0.8);
+        }
+
+        .piece.dragging {
+            cursor: grabbing;
+            z-index: 100;
+        }
+
+        .piece.placed {
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+
+        .wall {
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(135deg, #DEB887 25%, #D2691E 25%, #D2691E 50%, #DEB887 50%, #DEB887 75%, #D2691E 75%);
+            background-size: 20px 20px;
+            border: 3px solid #8B4513;
+        }
+
+        .wall-window {
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(135deg, #DEB887 25%, #D2691E 25%, #D2691E 50%, #DEB887 50%, #DEB887 75%, #D2691E 75%);
+            background-size: 20px 20px;
+            border: 3px solid #8B4513;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .window {
+            width: 50px;
+            height: 60px;
+            background: linear-gradient(180deg, #87CEEB 0%, #4169E1 100%);
+            border: 4px solid #8B4513;
+            position: relative;
+        }
+
+        .window::before, .window::after {
+            content: '';
+            position: absolute;
+            background: #8B4513;
+        }
+
+        .window::before {
+            width: 100%;
+            height: 3px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .window::after {
+            width: 3px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .door-wall {
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(135deg, #DEB887 25%, #D2691E 25%, #D2691E 50%, #DEB887 50%, #DEB887 75%, #D2691E 75%);
+            background-size: 20px 20px;
+            border: 3px solid #8B4513;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .door {
+            width: 45px;
+            height: 80px;
+            background: linear-gradient(180deg, #8B4513 0%, #654321 100%);
+            border: 3px solid #4a2c0a;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+        }
+
+        .door::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+        }
+
+        .roof {
+            width: 0;
+            height: 0;
+            border-left: 200px solid transparent;
+            border-right: 200px solid transparent;
+            border-bottom: 120px solid #8B0000;
+            position: relative;
+        }
+
+        .roof::after {
+            content: '';
+            position: absolute;
+            top: 120px;
+            left: -200px;
+            width: 400px;
+            height: 15px;
+            background: #654321;
+        }
+
+        .chimney {
+            width: 40px;
+            height: 60px;
+            background: linear-gradient(90deg, #DC143C 0%, #8B0000 100%);
+            border: 3px solid #4a0000;
+        }
+
+        .parts-tray {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            padding: 15px 30px;
+            background: rgba(139, 69, 19, 0.9);
+            border-radius: 15px;
+            border: 4px solid #654321;
+        }
+
+        .tray-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tray-item span {
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(139, 69, 19, 0.9);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 4px solid #654321;
+            color: white;
+        }
+
+        .score-board h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .score-board p {
+            margin: 5px 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: white;
+            text-shadow: 3px 3px 0 #000;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .message.show {
+            opacity: 1;
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .wobble {
+            animation: wobble 0.5s ease;
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        .fall {
+            animation: fall 1s ease-in forwards;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(600px) rotate(720deg); opacity: 0; }
+        }
+
+        .btn {
+            padding: 8px 15px;
+            font-size: 16px;
+            font-family: 'Comic Sans MS', cursive;
+            background: #FFD700;
+            border: 3px solid #B8860B;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+        }
+
+        .btn.active {
+            background: #90EE90;
+            border-color: #228B22;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            border: 3px solid #333;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 500;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 20px;
+            border: 10px solid transparent;
+            border-top-color: white;
+        }
+
+        .worker {
+            position: absolute;
+            bottom: 160px;
+            left: 80px;
+            font-size: 60px;
+            animation: workerBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes workerBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .mini-piece {
+            transform: scale(0.4);
+            transform-origin: center;
+        }
+
+        /* Instructions Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal {
+            background: linear-gradient(180deg, #8B4513 0%, #654321 100%);
+            padding: 30px 40px;
+            border-radius: 20px;
+            border: 5px solid #FFD700;
+            max-width: 500px;
+            text-align: center;
+            color: white;
+            transform: scale(1);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.hidden .modal {
+            transform: scale(0.8);
+        }
+
+        .modal h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .modal h2 {
+            font-size: 24px;
+            color: #FFD700;
+            margin: 20px 0 15px;
+        }
+
+        .modal p {
+            font-size: 16px;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+
+        .modal .instruction-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-align: left;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .modal .instruction-item .icon {
+            font-size: 32px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .modal .warning {
+            background: rgba(255,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px dashed #ff6b6b;
+        }
+
+        .modal .start-btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            margin-top: 20px;
+            background: #90EE90;
+            border-color: #228B22;
+            animation: pulseBtn 1s ease-in-out infinite;
+        }
+
+        @keyframes pulseBtn {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .help-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            border-radius: 50%;
+            background: rgba(139, 69, 19, 0.9);
+            border: 4px solid #654321;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .help-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Instructions Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h1>🏗️ Wobbly House Builder</h1>
+            <p>The world's most frustrating construction simulator!</p>
+
+            <h2>How To Play</h2>
+
+            <div class="instruction-item">
+                <span class="icon">👆</span>
+                <span><strong>DRAG</strong> pieces from the bottom tray</span>
+            </div>
+
+            <div class="instruction-item">
+                <span class="icon">🎯</span>
+                <span><strong>DROP</strong> them in the dashed build area to stack your house</span>
+            </div>
+
+            <div class="instruction-item">
+                <span class="icon">🏆</span>
+                <span><strong>WIN</strong> by placing all 6 pieces successfully!</span>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ WARNING:</strong> Pieces are EXTREMELY WOBBLY!<br>
+                The more you stack, the harder it gets!<br>
+                Pieces may fall and knock others down! 😱
+            </div>
+
+            <div class="instruction-item">
+                <span class="icon">🎵</span>
+                <span>Use the <strong>Music</strong> and <strong>Sound</strong> buttons to toggle audio</span>
+            </div>
+
+            <button class="btn start-btn" onclick="startGame()">🎮 START BUILDING!</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="sun"></div>
+        <div class="cloud" style="top: 60px; left: -100px; width: 100px; height: 40px;"></div>
+        <div class="cloud" style="top: 120px; left: -250px; width: 80px; height: 35px; animation-delay: -10s;"></div>
+
+        <div class="score-board">
+            <h2>🏗️ House Builder</h2>
+            <p>Score: <span id="score">0</span></p>
+            <p>Pieces: <span id="pieces">0</span>/6</p>
+            <div class="btn-group">
+                <button class="btn" onclick="resetGame()">🔄</button>
+                <button class="btn active" id="musicBtn" onclick="toggleMusic()">🎵</button>
+                <button class="btn active" id="soundBtn" onclick="toggleSound()">🔊</button>
+            </div>
+        </div>
+
+        <button class="help-btn" onclick="showInstructions()">❓</button>
+
+        <div class="worker">👷</div>
+        <div class="speech-bubble" id="speech" style="bottom: 240px; left: 60px;">
+            Let's build a house!
+        </div>
+
+        <div class="build-area"></div>
+        <div class="foundation"></div>
+        <div class="ground"></div>
+
+        <div class="message" id="message"></div>
+
+        <div class="parts-tray" id="tray">
+            <!-- Parts will be generated by JS -->
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO SYSTEM ==========
+        let audioCtx = null;
+        let musicEnabled = true;
+        let soundEnabled = true;
+        let musicInterval = null;
+        let currentNoteIndex = 0;
+
+        // Fun chiptune melody notes (frequencies in Hz)
+        const melody = [
+            392, 440, 494, 523, 494, 440, 392, 330,
+            294, 330, 392, 440, 392, 330, 294, 262,
+            330, 392, 440, 494, 523, 494, 440, 392,
+            440, 392, 330, 294, 330, 392, 440, 392
+        ];
+
+        const bassline = [
+            131, 131, 165, 165, 196, 196, 220, 220,
+            131, 131, 165, 165, 196, 196, 147, 147
+        ];
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playNote(frequency, duration, type = 'square', volume = 0.1) {
+            if (!audioCtx || !soundEnabled) return;
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function startMusic() {
+            if (!musicEnabled || musicInterval) return;
+            initAudio();
+
+            let bassIndex = 0;
+            musicInterval = setInterval(() => {
+                if (!musicEnabled) return;
+
+                // Play melody
+                playNote(melody[currentNoteIndex], 0.2, 'square', 0.08);
+
+                // Play bass every 2 notes
+                if (currentNoteIndex % 2 === 0) {
+                    playNote(bassline[bassIndex], 0.3, 'triangle', 0.12);
+                    bassIndex = (bassIndex + 1) % bassline.length;
+                }
+
+                currentNoteIndex = (currentNoteIndex + 1) % melody.length;
+            }, 200);
+        }
+
+        function stopMusic() {
+            if (musicInterval) {
+                clearInterval(musicInterval);
+                musicInterval = null;
+            }
+        }
+
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            const btn = document.getElementById('musicBtn');
+            btn.classList.toggle('active', musicEnabled);
+            btn.textContent = musicEnabled ? '🎵' : '🔇';
+
+            if (musicEnabled) {
+                startMusic();
+            } else {
+                stopMusic();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            btn.classList.toggle('active', soundEnabled);
+            btn.textContent = soundEnabled ? '🔊' : '🔈';
+        }
+
+        // Sound effects
+        function playPickupSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            playNote(523, 0.1, 'square', 0.15);
+            setTimeout(() => playNote(659, 0.1, 'square', 0.15), 50);
+        }
+
+        function playPlaceSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            playNote(392, 0.1, 'square', 0.2);
+            setTimeout(() => playNote(523, 0.15, 'square', 0.2), 80);
+            setTimeout(() => playNote(659, 0.2, 'square', 0.15), 160);
+        }
+
+        function playFailSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            playNote(200, 0.15, 'sawtooth', 0.2);
+            setTimeout(() => playNote(150, 0.15, 'sawtooth', 0.2), 100);
+            setTimeout(() => playNote(100, 0.3, 'sawtooth', 0.15), 200);
+        }
+
+        function playWinSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const notes = [523, 587, 659, 698, 784, 880, 988, 1047];
+            notes.forEach((note, i) => {
+                setTimeout(() => playNote(note, 0.2, 'square', 0.15), i * 100);
+            });
+        }
+
+        function playCrashSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            // Create noise for crash
+            const bufferSize = audioCtx.sampleRate * 0.3;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+            }
+            const noise = audioCtx.createBufferSource();
+            const gainNode = audioCtx.createGain();
+            noise.buffer = buffer;
+            noise.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            noise.start();
+        }
+
+        // ========== GAME LOGIC ==========
+        const messages = [
+            "Let's build a house!",
+            "Careful now... 🤔",
+            "WOBBLY! 😱",
+            "Nice one! 👍",
+            "Oh no! 😅",
+            "Stack it up! 🏗️",
+            "Almost there! 🎉",
+            "You call that a house? 😂",
+            "My grandma builds better!",
+            "Gravity is not your friend!",
+            "Is this modern art? 🎨",
+            "The inspector won't like this...",
+            "Needs more duct tape! 🛠️"
+        ];
+
+        const funnyFails = [
+            "TIMBER! 🌲",
+            "Oops! Earthquake! 🌍",
+            "The wind got it! 💨",
+            "Physics says NO! ⚡",
+            "Structural integrity: 0 😂",
+            "That's coming out of your paycheck!",
+            "The house said: BYE! 👋"
+        ];
+
+        const funnySuccess = [
+            "MASTERPIECE! 🏆",
+            "Bob the Builder WHO? 👷",
+            "Architect of the Year! 🎖️",
+            "Your mom would be proud! 💕",
+            "It's not falling... yet! 😅",
+            "Home sweet home! 🏠"
+        ];
+
+        let score = 0;
+        let placedPieces = 0;
+        let draggingPiece = null;
+        let offsetX, offsetY;
+        let placedElements = [];
+
+        const parts = [
+            { type: 'wall', name: 'Wall' },
+            { type: 'wall-window', name: 'Window Wall' },
+            { type: 'door-wall', name: 'Door Wall' },
+            { type: 'wall', name: 'Wall' },
+            { type: 'roof', name: 'Roof' },
+            { type: 'chimney', name: 'Chimney' }
+        ];
+
+        function createPart(type, forTray = false) {
+            const piece = document.createElement('div');
+            piece.className = `piece ${type}`;
+
+            if (type === 'wall-window') {
+                const window = document.createElement('div');
+                window.className = 'window';
+                piece.appendChild(window);
+            } else if (type === 'door-wall') {
+                const door = document.createElement('div');
+                door.className = 'door';
+                piece.appendChild(door);
+            }
+
+            if (forTray) {
+                piece.classList.add('mini-piece');
+            }
+
+            return piece;
+        }
+
+        function initTray() {
+            const tray = document.getElementById('tray');
+            tray.innerHTML = '';
+
+            parts.forEach((part, index) => {
+                const trayItem = document.createElement('div');
+                trayItem.className = 'tray-item';
+                trayItem.dataset.index = index;
+
+                const piece = createPart(part.type, true);
+                piece.dataset.partIndex = index;
+
+                const label = document.createElement('span');
+                label.textContent = part.name;
+
+                trayItem.appendChild(piece);
+                trayItem.appendChild(label);
+                tray.appendChild(trayItem);
+
+                piece.addEventListener('mousedown', startDrag);
+                piece.addEventListener('touchstart', startDrag, { passive: false });
+            });
+        }
+
+        function startDrag(e) {
+            e.preventDefault();
+            const target = e.target.closest('.piece');
+            if (!target || target.classList.contains('placed')) return;
+
+            playPickupSound();
+
+            const partIndex = target.dataset.partIndex;
+            const part = parts[partIndex];
+
+            // Create a new piece for dragging
+            draggingPiece = createPart(part.type);
+            draggingPiece.classList.add('dragging');
+            draggingPiece.dataset.partIndex = partIndex;
+            document.body.appendChild(draggingPiece);
+
+            const rect = draggingPiece.getBoundingClientRect();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+
+            offsetX = rect.width / 2;
+            offsetY = rect.height / 2;
+
+            draggingPiece.style.left = (clientX - offsetX) + 'px';
+            draggingPiece.style.top = (clientY - offsetY) + 'px';
+
+            showSpeech(messages[Math.floor(Math.random() * 6)]);
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function drag(e) {
+            if (!draggingPiece) return;
+            e.preventDefault();
+
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+
+            draggingPiece.style.left = (clientX - offsetX) + 'px';
+            draggingPiece.style.top = (clientY - offsetY) + 'px';
+
+            // Add wobble effect while dragging
+            if (Math.random() > 0.95) {
+                draggingPiece.style.transform = `rotate(${(Math.random() - 0.5) * 10}deg)`;
+            }
+        }
+
+        function endDrag(e) {
+            if (!draggingPiece) return;
+
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('touchend', endDrag);
+
+            const rect = draggingPiece.getBoundingClientRect();
+            const buildArea = document.querySelector('.build-area').getBoundingClientRect();
+
+            // Check if dropped in build area
+            if (rect.left > buildArea.left - 100 &&
+                rect.right < buildArea.right + 100 &&
+                rect.bottom > buildArea.top &&
+                rect.bottom < buildArea.bottom + 200) {
+
+                // Random chance of failure for comedy
+                const failChance = Math.random();
+                const stability = 0.7 - (placedPieces * 0.08); // Gets harder as you place more
+
+                if (failChance > stability) {
+                    // FAIL! Piece falls
+                    playFailSound();
+                    draggingPiece.classList.add('wobble');
+                    showMessage(funnyFails[Math.floor(Math.random() * funnyFails.length)]);
+                    showSpeech(funnyFails[Math.floor(Math.random() * funnyFails.length)]);
+
+                    setTimeout(() => {
+                        playCrashSound();
+                        draggingPiece.classList.add('fall');
+                        // Sometimes knock down other pieces
+                        if (Math.random() > 0.5 && placedElements.length > 0) {
+                            const victimIndex = Math.floor(Math.random() * placedElements.length);
+                            const victim = placedElements[victimIndex];
+                            if (victim && victim.parentNode) {
+                                victim.classList.add('fall');
+                                setTimeout(() => victim.remove(), 1000);
+                                placedElements.splice(victimIndex, 1);
+                                placedPieces--;
+                                score = Math.max(0, score - 50);
+                                updateScore();
+                            }
+                        }
+                        setTimeout(() => {
+                            if (draggingPiece && draggingPiece.parentNode) {
+                                draggingPiece.remove();
+                            }
+                        }, 1000);
+                    }, 500);
+                } else {
+                    // SUCCESS! Place the piece
+                    playPlaceSound();
+                    draggingPiece.classList.remove('dragging');
+                    draggingPiece.classList.add('placed');
+                    draggingPiece.style.transform = `rotate(${(Math.random() - 0.5) * 6}deg)`; // Slightly crooked for comedy
+
+                    placedElements.push(draggingPiece);
+                    placedPieces++;
+                    score += 100;
+                    updateScore();
+
+                    showSpeech(messages[Math.floor(Math.random() * messages.length)]);
+
+                    // Hide tray item
+                    const trayItem = document.querySelector(`.tray-item[data-index="${draggingPiece.dataset.partIndex}"]`);
+                    if (trayItem) {
+                        trayItem.style.opacity = '0.3';
+                        trayItem.querySelector('.piece').style.pointerEvents = 'none';
+                    }
+
+                    // Check win condition
+                    if (placedPieces >= 6) {
+                        playWinSound();
+                        showMessage(funnySuccess[Math.floor(Math.random() * funnySuccess.length)]);
+                        showSpeech("WE DID IT! 🎉");
+                        celebrateWin();
+                    }
+                }
+            } else {
+                // Dropped outside - remove
+                playFailSound();
+                draggingPiece.classList.add('fall');
+                showSpeech("Wrong spot! 😅");
+                setTimeout(() => {
+                    if (draggingPiece && draggingPiece.parentNode) {
+                        draggingPiece.remove();
+                    }
+                }, 1000);
+            }
+
+            draggingPiece = null;
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('pieces').textContent = placedPieces;
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.classList.add('show');
+            setTimeout(() => msg.classList.remove('show'), 2000);
+        }
+
+        function showSpeech(text) {
+            const speech = document.getElementById('speech');
+            speech.textContent = text;
+            speech.style.opacity = '1';
+            setTimeout(() => speech.style.opacity = '0', 3000);
+        }
+
+        function celebrateWin() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 50);
+            }
+        }
+
+        function resetGame() {
+            // Remove all placed pieces
+            placedElements.forEach(el => {
+                if (el && el.parentNode) el.remove();
+            });
+            placedElements = [];
+            placedPieces = 0;
+            score = 0;
+            updateScore();
+
+            // Reset tray
+            initTray();
+
+            showMessage("Let's try again! 🔄");
+            showSpeech("Fresh start! 💪");
+            playPickupSound();
+        }
+
+        function showInstructions() {
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function startGame() {
+            document.getElementById('modal').classList.add('hidden');
+            initAudio();
+            startMusic();
+            showSpeech("Let's build a house!");
+        }
+
+        // Initialize game
+        initTray();
+
+        // Random commentary
+        setInterval(() => {
+            if (Math.random() > 0.7 && placedPieces > 0 && placedPieces < 6) {
+                showSpeech(messages[Math.floor(Math.random() * messages.length)]);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

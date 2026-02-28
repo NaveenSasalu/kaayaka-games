@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaayaka Games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a855f7, #ec4899, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.5);
+            font-size: 1rem;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 30px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(168, 85, 247, 0.4);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .game-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .game-card p {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .game-tag {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 4px 12px;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #a855f7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+        }
+
+        .footer a:hover { color: #a855f7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Kaayaka Games</h1>
+            <p>A collection of browser-based games</p>
+        </div>
+
+        <div class="games-grid">
+            <a href="forest-adventure.html" class="game-card">
+                <div class="game-icon">🌲</div>
+                <h2>Forest Adventure</h2>
+                <p>A survival story game. You're lost in the forest — make choices to find your way home.</p>
+                <span class="game-tag">Story</span>
+            </a>
+
+            <a href="house-builder.html" class="game-card">
+                <div class="game-icon">🏗️</div>
+                <h2>Wobbly House Builder</h2>
+                <p>Drag and stack wobbly pieces to build a house. Physics makes it hilariously hard.</p>
+                <span class="game-tag">Arcade</span>
+            </a>
+
+            <a href="jigsaw-puzzle.html" class="game-card">
+                <div class="game-icon">🧩</div>
+                <h2>Jigsaw Puzzle</h2>
+                <p>Upload an image or pick a pattern, choose difficulty, and solve the jigsaw puzzle.</p>
+                <span class="game-tag">Puzzle</span>
+            </a>
+
+            <a href="sudoku-instructor.html" class="game-card">
+                <div class="game-icon">🔢</div>
+                <h2>Sudoku Instructor</h2>
+                <p>Learn to solve Sudoku with step-by-step explanations of each technique used.</p>
+                <span class="game-tag">Educational</span>
+            </a>
+        </div>
+
+        <div class="footer">
+            <a href="https://kaayaka.in">kaayaka.in</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost in the Forest - A Survival Adventure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Raleway:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: #0a0f0a;
+            color: #e8e4d9;
+        }
+
+        /* Main Layout */
+        .game-wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Forest Scene */
+        .scene-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .forest-scene {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: all 2s ease;
+        }
+
+        /* Sky layers */
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            transition: background 3s ease;
+        }
+
+        .sky.morning {
+            background: linear-gradient(180deg, #87CEEB 0%, #FFE4B5 50%, #FFA07A 100%);
+        }
+
+        .sky.day {
+            background: linear-gradient(180deg, #4A90D9 0%, #87CEEB 50%, #B0E0E6 100%);
+        }
+
+        .sky.evening {
+            background: linear-gradient(180deg, #2C1810 0%, #8B4513 30%, #FF6347 60%, #FFD700 100%);
+        }
+
+        .sky.night {
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 50%, #2a2a4a 100%);
+        }
+
+        /* Stars */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .stars.visible {
+            opacity: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Sun/Moon */
+        .celestial {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            transition: all 3s ease;
+        }
+
+        .sun {
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 100%);
+            box-shadow: 0 0 60px rgba(255, 200, 0, 0.6);
+        }
+
+        .moon {
+            background: radial-gradient(circle at 30% 30%, #f5f5dc 0%, #d4d4aa 100%);
+            box-shadow: 0 0 40px rgba(255, 255, 200, 0.3);
+        }
+
+        /* Ground and forest */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(180deg, #1a3a1a 0%, #0f280f 50%, #0a1a0a 100%);
+        }
+
+        /* Trees */
+        .trees-back {
+            position: absolute;
+            bottom: 40%;
+            left: 0;
+            right: 0;
+            height: 35%;
+            display: flex;
+            justify-content: space-around;
+            opacity: 0.4;
+        }
+
+        .trees-mid {
+            position: absolute;
+            bottom: 30%;
+            left: 0;
+            right: 0;
+            height: 45%;
+            display: flex;
+            justify-content: space-around;
+            opacity: 0.6;
+        }
+
+        .trees-front {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            display: flex;
+            justify-content: space-around;
+            opacity: 0.9;
+        }
+
+        .tree {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tree-top {
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 80px solid #0f3010;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+        }
+
+        .tree-top-2 {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 60px solid #1a4520;
+            margin-top: -30px;
+        }
+
+        .tree-trunk {
+            width: 12px;
+            height: 40px;
+            background: linear-gradient(90deg, #3d2817 0%, #5c3d2e 50%, #3d2817 100%);
+            margin-top: -5px;
+        }
+
+        .trees-front .tree-top {
+            border-left-width: 50px;
+            border-right-width: 50px;
+            border-bottom-width: 120px;
+            border-bottom-color: #0a2510;
+        }
+
+        .trees-front .tree-top-2 {
+            border-left-width: 40px;
+            border-right-width: 40px;
+            border-bottom-width: 90px;
+            border-bottom-color: #153520;
+            margin-top: -50px;
+        }
+
+        .trees-front .tree-trunk {
+            width: 20px;
+            height: 60px;
+        }
+
+        /* Fog */
+        .fog {
+            position: absolute;
+            bottom: 20%;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(180deg, transparent 0%, rgba(200,200,200,0.1) 50%, transparent 100%);
+            animation: fogMove 20s ease-in-out infinite;
+        }
+
+        @keyframes fogMove {
+            0%, 100% { transform: translateX(-5%); opacity: 0.3; }
+            50% { transform: translateX(5%); opacity: 0.5; }
+        }
+
+        /* Fireflies */
+        .firefly {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffff88;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 3px rgba(255, 255, 100, 0.8);
+            animation: fireflyFloat 8s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .firefly.visible {
+            opacity: 1;
+        }
+
+        @keyframes fireflyFloat {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(30px, -20px); }
+            50% { transform: translate(-20px, -40px); }
+            75% { transform: translate(10px, -10px); }
+        }
+
+        /* Campfire */
+        .campfire {
+            position: absolute;
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+
+        .campfire.visible {
+            display: block;
+        }
+
+        .fire {
+            width: 40px;
+            height: 60px;
+            position: relative;
+        }
+
+        .flame {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 40px;
+            background: linear-gradient(180deg, #ff6600 0%, #ffcc00 50%, #fff 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: flicker 0.5s ease-in-out infinite alternate;
+            box-shadow: 0 0 30px rgba(255, 150, 0, 0.8), 0 0 60px rgba(255, 100, 0, 0.5);
+        }
+
+        .flame:nth-child(2) {
+            width: 15px;
+            height: 30px;
+            left: 30%;
+            animation-delay: 0.1s;
+        }
+
+        .flame:nth-child(3) {
+            width: 12px;
+            height: 25px;
+            left: 70%;
+            animation-delay: 0.2s;
+        }
+
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1) rotate(-2deg); }
+            100% { transform: translateX(-50%) scale(1.1) rotate(2deg); }
+        }
+
+        .logs {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+
+        .log {
+            width: 40px;
+            height: 10px;
+            background: linear-gradient(90deg, #3d2817, #5c3d2e, #3d2817);
+            border-radius: 3px;
+        }
+
+        .log:nth-child(2) {
+            transform: rotate(60deg) translate(-5px, -15px);
+        }
+
+        /* Shelter */
+        .shelter {
+            position: absolute;
+            bottom: 25%;
+            right: 20%;
+            display: none;
+        }
+
+        .shelter.visible {
+            display: block;
+        }
+
+        .shelter-frame {
+            width: 0;
+            height: 0;
+            border-left: 60px solid transparent;
+            border-right: 60px solid transparent;
+            border-bottom: 80px solid #2d1f14;
+            position: relative;
+        }
+
+        .shelter-opening {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 35px;
+            background: #0a0a0a;
+            border-radius: 50% 50% 0 0;
+        }
+
+        /* Weather effects */
+        .rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        .rain.visible {
+            display: block;
+        }
+
+        .raindrop {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(180deg, transparent, rgba(174, 194, 224, 0.6));
+            animation: rain 0.8s linear infinite;
+        }
+
+        @keyframes rain {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        /* Scene overlay for time of day */
+        .scene-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            transition: background 3s ease;
+        }
+
+        .scene-overlay.night {
+            background: rgba(0, 0, 30, 0.5);
+        }
+
+        .scene-overlay.evening {
+            background: rgba(50, 20, 0, 0.2);
+        }
+
+        /* Game Panel */
+        .game-panel {
+            width: 420px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1a1510 0%, #0f0a05 100%);
+            border-left: 3px solid #3d2817;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Day counter */
+        .day-header {
+            background: linear-gradient(90deg, #2d1f14 0%, #1a1208 100%);
+            padding: 15px 20px;
+            border-bottom: 2px solid #3d2817;
+            text-align: center;
+        }
+
+        .day-number {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.8rem;
+            color: #d4a056;
+            text-shadow: 0 0 10px rgba(212, 160, 86, 0.3);
+        }
+
+        .time-display {
+            font-size: 0.85rem;
+            color: #8a7a5a;
+            margin-top: 5px;
+        }
+
+        /* Status bars */
+        .status-section {
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid #2d1f14;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .status-label {
+            font-size: 0.7rem;
+            color: #8a7a5a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-bar {
+            height: 8px;
+            background: #1a1510;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #3d2817;
+        }
+
+        .status-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease, background 0.5s ease;
+        }
+
+        .status-fill.health { background: linear-gradient(90deg, #cc4444, #44cc44); }
+        .status-fill.hunger { background: linear-gradient(90deg, #cc8844, #44aa44); }
+        .status-fill.thirst { background: linear-gradient(90deg, #4488cc, #44aacc); }
+        .status-fill.warmth { background: linear-gradient(90deg, #cc6644, #ccaa44); }
+        .status-fill.energy { background: linear-gradient(90deg, #8844cc, #44cc88); }
+        .status-fill.morale { background: linear-gradient(90deg, #cc4488, #cccc44); }
+
+        .status-value {
+            font-size: 0.7rem;
+            color: #a0906a;
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        /* Inventory */
+        .inventory-section {
+            padding: 15px 20px;
+            border-bottom: 1px solid #2d1f14;
+        }
+
+        .section-title {
+            font-family: 'Crimson Text', serif;
+            font-size: 1rem;
+            color: #d4a056;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .inventory-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .inv-item {
+            background: linear-gradient(135deg, #2d1f14 0%, #1a1208 100%);
+            border: 1px solid #3d2817;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            color: #c0b090;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .inv-empty {
+            color: #5a4a3a;
+            font-style: italic;
+            font-size: 0.8rem;
+        }
+
+        /* Story area */
+        .story-section {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .story-text {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #d8d0c0;
+        }
+
+        .story-text p {
+            margin-bottom: 15px;
+            text-indent: 20px;
+        }
+
+        .story-text p:first-child {
+            text-indent: 0;
+        }
+
+        .story-text .highlight {
+            color: #d4a056;
+            font-weight: 600;
+        }
+
+        .story-text .nature {
+            color: #7cb07c;
+            font-style: italic;
+        }
+
+        .story-text .warning {
+            color: #cc8844;
+        }
+
+        .story-text .discovery {
+            color: #88aacc;
+        }
+
+        /* Choices */
+        .choices-section {
+            padding: 15px 20px;
+            background: linear-gradient(180deg, #1a1510 0%, #0f0a05 100%);
+            border-top: 2px solid #3d2817;
+        }
+
+        .choice-btn {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #2d1f14 0%, #1a1208 100%);
+            border: 1px solid #3d2817;
+            border-radius: 6px;
+            color: #c0b090;
+            font-family: 'Raleway', sans-serif;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .choice-btn:hover {
+            background: linear-gradient(135deg, #3d2f24 0%, #2a1a10 100%);
+            border-color: #d4a056;
+            color: #d4a056;
+            transform: translateX(5px);
+        }
+
+        .choice-btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .choice-icon {
+            font-size: 1.2rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .choice-text {
+            flex: 1;
+        }
+
+        .choice-cost {
+            font-size: 0.7rem;
+            color: #8a6a4a;
+        }
+
+        /* Knowledge gained */
+        .knowledge-popup {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #1a3020 0%, #0f2015 100%);
+            border: 2px solid #2a5030;
+            border-radius: 10px;
+            padding: 15px 20px;
+            max-width: 350px;
+            transform: translateY(150%);
+            transition: transform 0.5s ease;
+            z-index: 100;
+        }
+
+        .knowledge-popup.show {
+            transform: translateY(0);
+        }
+
+        .knowledge-title {
+            color: #7cb07c;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .knowledge-text {
+            font-size: 0.85rem;
+            color: #a0c0a0;
+            line-height: 1.5;
+        }
+
+        /* Sound toggle */
+        .sound-toggle {
+            position: fixed;
+            top: 15px;
+            right: 440px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #3d2817;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            z-index: 50;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(60,40,20,0.8);
+        }
+
+        /* Victory overlay */
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .victory-overlay.show {
+            display: flex;
+        }
+
+        .victory-content {
+            text-align: center;
+            max-width: 500px;
+            padding: 40px;
+        }
+
+        .victory-title {
+            font-family: 'Crimson Text', serif;
+            font-size: 2.5rem;
+            color: #d4a056;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(212, 160, 86, 0.5);
+        }
+
+        .victory-text {
+            font-size: 1.1rem;
+            color: #c0b090;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .victory-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .victory-stat {
+            background: rgba(45, 31, 20, 0.5);
+            border: 1px solid #3d2817;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .victory-stat-value {
+            font-size: 2rem;
+            color: #d4a056;
+            font-weight: 700;
+        }
+
+        .victory-stat-label {
+            font-size: 0.75rem;
+            color: #8a7a5a;
+            text-transform: uppercase;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #3d5030 0%, #2a3520 100%);
+            border: 2px solid #5a7048;
+            color: #b0c0a0;
+            padding: 15px 40px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .restart-btn:hover {
+            background: linear-gradient(135deg, #4d6040 0%, #3a4530 100%);
+            transform: scale(1.05);
+        }
+
+        /* Scrollbar */
+        .story-section::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .story-section::-webkit-scrollbar-track {
+            background: #1a1510;
+        }
+
+        .story-section::-webkit-scrollbar-thumb {
+            background: #3d2817;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .game-wrapper {
+                flex-direction: column;
+            }
+
+            .scene-container {
+                height: 40vh;
+            }
+
+            .game-panel {
+                width: 100%;
+                height: 60vh;
+            }
+
+            .sound-toggle {
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- Forest Scene -->
+        <div class="scene-container">
+            <div class="forest-scene">
+                <!-- Sky -->
+                <div class="sky morning" id="sky"></div>
+
+                <!-- Stars (for night) -->
+                <div class="stars" id="stars"></div>
+
+                <!-- Sun/Moon -->
+                <div class="celestial sun" id="celestial" style="top: 20%; left: 30%;"></div>
+
+                <!-- Ground -->
+                <div class="ground"></div>
+
+                <!-- Trees layers -->
+                <div class="trees-back" id="treesBack"></div>
+                <div class="trees-mid" id="treesMid"></div>
+                <div class="trees-front" id="treesFront"></div>
+
+                <!-- Fog -->
+                <div class="fog"></div>
+
+                <!-- Fireflies -->
+                <div id="fireflies"></div>
+
+                <!-- Campfire -->
+                <div class="campfire" id="campfire">
+                    <div class="fire">
+                        <div class="flame"></div>
+                        <div class="flame"></div>
+                        <div class="flame"></div>
+                    </div>
+                    <div class="logs">
+                        <div class="log"></div>
+                        <div class="log"></div>
+                    </div>
+                </div>
+
+                <!-- Shelter -->
+                <div class="shelter" id="shelter">
+                    <div class="shelter-frame">
+                        <div class="shelter-opening"></div>
+                    </div>
+                </div>
+
+                <!-- Rain -->
+                <div class="rain" id="rain"></div>
+
+                <!-- Overlay -->
+                <div class="scene-overlay" id="sceneOverlay"></div>
+            </div>
+        </div>
+
+        <!-- Game Panel -->
+        <div class="game-panel">
+            <!-- Day Header -->
+            <div class="day-header">
+                <div class="day-number" id="dayNumber">Day 1</div>
+                <div class="time-display" id="timeDisplay">Early Morning • Clear Sky</div>
+            </div>
+
+            <!-- Status Bars -->
+            <div class="status-section">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">❤️ Health</div>
+                        <div class="status-bar"><div class="status-fill health" id="healthBar" style="width: 100%"></div></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">🍖 Hunger</div>
+                        <div class="status-bar"><div class="status-fill hunger" id="hungerBar" style="width: 80%"></div></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">💧 Thirst</div>
+                        <div class="status-bar"><div class="status-fill thirst" id="thirstBar" style="width: 80%"></div></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">🔥 Warmth</div>
+                        <div class="status-bar"><div class="status-fill warmth" id="warmthBar" style="width: 70%"></div></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">⚡ Energy</div>
+                        <div class="status-bar"><div class="status-fill energy" id="energyBar" style="width: 90%"></div></div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">😊 Morale</div>
+                        <div class="status-bar"><div class="status-fill morale" id="moraleBar" style="width: 75%"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory -->
+            <div class="inventory-section">
+                <div class="section-title">🎒 Supplies</div>
+                <div class="inventory-grid" id="inventory">
+                    <span class="inv-empty">Your pockets are empty...</span>
+                </div>
+            </div>
+
+            <!-- Story -->
+            <div class="story-section" id="storySection">
+                <div class="story-text" id="storyText">
+                    <!-- Story content will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Choices -->
+            <div class="choices-section" id="choicesSection">
+                <!-- Choice buttons will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Knowledge Popup -->
+    <div class="knowledge-popup" id="knowledgePopup">
+        <div class="knowledge-title">🌿 Survival Knowledge</div>
+        <div class="knowledge-text" id="knowledgeText"></div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <div class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</div>
+
+    <!-- Victory Overlay -->
+    <div class="victory-overlay" id="victoryOverlay">
+        <div class="victory-content">
+            <div class="victory-title">🏠 You Made It Home!</div>
+            <div class="victory-text" id="victoryText"></div>
+            <div class="victory-stats" id="victoryStats"></div>
+            <button class="restart-btn" onclick="restartGame()">🌲 New Adventure</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== GAME STATE ==========
+        const game = {
+            day: 1,
+            timeOfDay: 0, // 0=morning, 1=midday, 2=evening, 3=night
+            weather: 'clear',
+
+            health: 100,
+            hunger: 80,
+            thirst: 80,
+            warmth: 70,
+            energy: 90,
+            morale: 75,
+
+            inventory: [],
+            skills: [],
+            hasShelter: false,
+            hasFire: false,
+
+            scene: 'intro',
+            actionsToday: 0,
+            totalDays: 1,
+
+            soundEnabled: true
+        };
+
+        const timeNames = ['Early Morning', 'Midday', 'Evening', 'Night'];
+        const weatherNames = { clear: 'Clear Sky', cloudy: 'Cloudy', rain: 'Light Rain', storm: 'Stormy' };
+
+        // ========== AUDIO ==========
+        let audioCtx = null;
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!game.soundEnabled || !audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.frequency.value = 800;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'success') {
+                osc.frequency.value = 523;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start();
+                setTimeout(() => osc.frequency.value = 659, 100);
+                setTimeout(() => osc.frequency.value = 784, 200);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'discovery') {
+                osc.type = 'triangle';
+                osc.frequency.value = 440;
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        function toggleSound() {
+            game.soundEnabled = !game.soundEnabled;
+            document.getElementById('soundToggle').textContent = game.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ========== STORY CONTENT ==========
+        const scenes = {
+            intro: {
+                text: `<p>The forest trail had seemed so clear just moments ago. You were following the nature walk path, admiring the way sunlight filtered through the canopy above, when you noticed something glinting between the ferns.</p>
+                <p>You stepped off the path to investigate — just a few feet — and when you turned around, <span class="warning">the trail had vanished</span>.</p>
+                <p>Now you stand in a small clearing, surrounded by towering pines. The trees are so tall their tops seem to brush the clouds. <span class="nature">Somewhere, a woodpecker drums against bark. Leaves rustle in a gentle breeze that carries the scent of moss and earth.</span></p>
+                <p>You take a deep breath. The sun is still climbing — you have plenty of daylight. <span class="highlight">Your adventure begins now.</span></p>`,
+                choices: [
+                    { text: 'Look for high ground', icon: '🏔️', next: 'lookHighGround', cost: 'Uses energy' },
+                    { text: 'Listen carefully to your surroundings', icon: '👂', next: 'listenCarefully', cost: 'Takes time' },
+                    { text: 'Search the immediate area', icon: '🔍', next: 'searchArea', cost: 'Uses energy' }
+                ]
+            },
+
+            lookHighGround: {
+                text: `<p>You scan the treeline, looking for anything taller than the pines. There — to your left — a rocky outcrop rises above the forest canopy.</p>
+                <p>The climb takes effort, but the view from the top is worth it. <span class="discovery">Below, the forest stretches like a green ocean. You spot a thin silver ribbon winding through the trees — a stream!</span></p>
+                <p><span class="nature">A hawk circles lazily overhead, riding invisible currents of warm air.</span></p>
+                <p>From here, you can also see what looks like <span class="discovery">smoke</span> rising from somewhere to the north. Someone else is out here.</p>`,
+                statChanges: { energy: -10 },
+                knowledge: "Finding high ground helps you orient yourself. Look for water sources, clearings, or signs of civilization.",
+                addItem: { name: 'Sharp Stone', icon: '🪨' },
+                choices: [
+                    { text: 'Head toward the stream', icon: '💧', next: 'findStream', cost: 'Long walk' },
+                    { text: 'Investigate the smoke', icon: '💨', next: 'findSmoke', cost: 'Far journey' },
+                    { text: 'Climb down and gather supplies first', icon: '🎒', next: 'gatherSupplies', cost: 'Takes time' }
+                ]
+            },
+
+            listenCarefully: {
+                text: `<p>You close your eyes and still yourself, letting the sounds of the forest wash over you.</p>
+                <p><span class="nature">Birds chatter in the canopy. Wind sighs through pine needles. A distant woodpecker keeps rhythm on an old trunk...</span></p>
+                <p>And there — beneath it all — <span class="discovery">the gentle music of running water</span>. It's coming from somewhere to your left.</p>
+                <p>You also notice the position of the sun more clearly now. It's risen about a quarter of the way up — you still have most of the day ahead.</p>`,
+                statChanges: { morale: 5 },
+                knowledge: "In the wild, water is life. Streams lead to rivers, and rivers often lead to civilization. Follow water downstream.",
+                choices: [
+                    { text: 'Follow the sound of water', icon: '💧', next: 'findStream', cost: '' },
+                    { text: 'Climb a tree for a better view', icon: '🌲', next: 'climbTree', cost: 'Uses energy' },
+                    { text: 'Mark this spot and explore', icon: '🗺️', next: 'markAndExplore', cost: 'Takes time' }
+                ]
+            },
+
+            searchArea: {
+                text: `<p>You carefully search the clearing, pushing aside ferns and checking under fallen logs.</p>
+                <p><span class="discovery">Your effort pays off!</span> You find several useful things: a sturdy <span class="highlight">branch</span> that could serve as a walking stick, some <span class="highlight">dry bark</span> perfect for tinder, and — tucked beneath a mossy rock — a cluster of <span class="highlight">berries</span> that look like the wild blueberries from camp.</p>
+                <p><span class="nature">A curious squirrel watches you from a nearby oak, chattering at your intrusion.</span></p>`,
+                statChanges: { energy: -10, morale: 10 },
+                addItem: { name: 'Walking Stick', icon: '🥢' },
+                addItem2: { name: 'Dry Bark', icon: '🪵' },
+                addItem3: { name: 'Wild Berries', icon: '🫐' },
+                choices: [
+                    { text: 'Eat some berries to restore energy', icon: '🫐', next: 'eatBerries', cost: '+Hunger' },
+                    { text: 'Continue exploring deeper', icon: '🌲', next: 'exploreDeeper', cost: 'Uses energy' },
+                    { text: 'Look for water first', icon: '💧', next: 'findStream', cost: '' }
+                ]
+            },
+
+            findStream: {
+                text: `<p>You make your way through the undergrowth, following your ears. The sound of water grows stronger with each step.</p>
+                <p>Finally, the trees part to reveal a <span class="discovery">beautiful stream</span>, clear water tumbling over smooth, colorful stones. <span class="nature">Sunlight dances on the surface, and small fish dart in the shallows.</span></p>
+                <p>The stream flows steadily in one direction — downstream must lead somewhere. On the muddy bank, you notice <span class="highlight">footprints</span>. Boot prints. Someone has been here recently!</p>
+                <p><span class="nature">A dragonfly hovers nearby, its iridescent wings catching the light.</span></p>`,
+                statChanges: { thirst: 30, morale: 15 },
+                knowledge: "Finding fresh water is your first priority in any survival situation. Always look for clear, flowing water.",
+                choices: [
+                    { text: 'Follow the footprints', icon: '👣', next: 'followTracks', cost: '' },
+                    { text: 'Follow the stream downstream', icon: '🌊', next: 'followStream', cost: 'Long walk' },
+                    { text: 'Rest here and drink', icon: '😌', next: 'restByStream', cost: '+Energy +Thirst' }
+                ]
+            },
+
+            followTracks: {
+                text: `<p>You kneel down to examine the footprints more closely. They're fresh — the edges are still sharp and clear. Two sets: one larger, one smaller. A parent and child, perhaps?</p>
+                <p>The tracks lead away from the stream toward a cluster of <span class="discovery">large mossy boulders</span> to the east.</p>
+                <p>As you follow them, you notice other signs: <span class="highlight">a broken twig here, disturbed leaves there</span>. Someone passed through not long ago.</p>
+                <p>Then you hear it — <span class="discovery">a voice!</span></p>
+                <p><em>"Biscuit! BISCUIT! Where are you, girl?"</em></p>`,
+                statChanges: { morale: 20 },
+                knowledge: "Learning to read tracks and signs helps you understand who — or what — has passed through an area.",
+                choices: [
+                    { text: 'Call out for help', icon: '📢', next: 'callForHelp', cost: '' },
+                    { text: 'Approach quietly first', icon: '🤫', next: 'approachQuietly', cost: '' },
+                    { text: 'Make yourself visible', icon: '🙋', next: 'makeVisible', cost: '' }
+                ]
+            },
+
+            approachQuietly: {
+                text: `<p>You move carefully toward the voice, stepping over twigs and avoiding dry leaves. It's smart to see who you're dealing with before making yourself known.</p>
+                <p>Peering around a moss-covered boulder, you see a <span class="highlight">girl about your age</span>, maybe a bit older, wearing a bright yellow t-shirt that says "Camp Sunshine." She looks worried, calling out for someone named Biscuit.</p>
+                <p>Then you feel something warm brush against your leg.</p>
+                <p>Looking down, you find a <span class="discovery">fluffy golden retriever</span> looking up at you with big brown eyes, tail wagging hopefully. Her collar tag reads: <em>BISCUIT</em>.</p>
+                <p><span class="nature">She licks your hand and lets out a happy little whine.</span></p>`,
+                statChanges: { morale: 25 },
+                choices: [
+                    { text: 'Pet Biscuit and call out to the girl', icon: '🐕', next: 'meetMaya', cost: '' },
+                    { text: 'Let Biscuit lead you to her owner', icon: '🐾', next: 'meetMaya', cost: '' }
+                ]
+            },
+
+            callForHelp: {
+                text: `<p><em>"HELLO! I'M OVER HERE!"</em> you call out, your voice echoing through the trees.</p>
+                <p>The calling stops. Then: <em>"Hello? Who's there?"</em></p>
+                <p>A girl appears from behind the boulders — she's wearing a bright yellow "Camp Sunshine" t-shirt and holding a red dog leash.</p>
+                <p>Just then, a <span class="discovery">golden retriever</span> comes bounding through the ferns and nearly knocks you over with enthusiastic greeting.</p>
+                <p><em>"BISCUIT!"</em> the girl exclaims, running over. <em>"Oh thank goodness! And thank you for... wait, are you from the hiking group? Are you lost?"</em></p>`,
+                statChanges: { morale: 20 },
+                choices: [
+                    { text: 'Explain your situation', icon: '💬', next: 'meetMaya', cost: '' }
+                ]
+            },
+
+            makeVisible: {
+                text: `<p>You step out into a sunny patch and wave your arms, making yourself easy to spot.</p>
+                <p>A girl in a yellow "Camp Sunshine" t-shirt notices you almost immediately. <em>"Oh! Hello! Have you seen a golden retriever anywhere? She ran off chasing a—"</em></p>
+                <p>At that moment, a fluffy blur of golden fur comes racing out of the bushes and tackles the girl with enthusiastic kisses.</p>
+                <p><em>"BISCUIT! There you are!"</em> She laughs, then looks at you with a grateful smile. <em>"Wait — are you lost? You look like you've been through the forest."</em></p>`,
+                statChanges: { morale: 20 },
+                choices: [
+                    { text: 'Tell her you need help', icon: '💬', next: 'meetMaya', cost: '' }
+                ]
+            },
+
+            meetMaya: {
+                text: `<p><em>"I'm Maya,"</em> the girl says, clipping a leash to Biscuit's collar. <em>"I'm a junior counselor at Camp Sunshine — it's just through those trees. And guess what? Your camp, Camp Pinecone, is right next to ours!"</em></p>
+                <p>She reaches into her backpack and pulls out a <span class="highlight">granola bar</span> and a <span class="highlight">juice box</span>. <em>"Here — you must be hungry and thirsty. You were really brave staying calm out here. A lot of kids would have panicked."</em></p>
+                <p><span class="nature">Biscuit wags her tail and leans against your leg, as if agreeing with Maya.</span></p>
+                <p><em>"There are two trails back — the sunny meadow path or the shady forest path. Which sounds better?"</em></p>`,
+                statChanges: { hunger: 40, thirst: 40, morale: 30, energy: 20 },
+                addItem: { name: 'Granola Bar', icon: '🍫' },
+                knowledge: "Accepting help from trusted people like camp counselors is smart, not weak. Teamwork helps everyone survive.",
+                choices: [
+                    { text: 'Take the sunny meadow path', icon: '🌻', next: 'meadowPath', cost: '' },
+                    { text: 'Take the shady forest path', icon: '🌲', next: 'forestPath', cost: '' },
+                    { text: 'Ask Maya which she recommends', icon: '🤔', next: 'askMaya', cost: '' }
+                ]
+            },
+
+            meadowPath: {
+                text: `<p>You step out of the shade and into a <span class="discovery">sea of wildflowers</span>.</p>
+                <p><span class="nature">The meadow is alive with color — purple, yellow, pink, and white blossoms swaying gently in the warm breeze. Butterflies dance from flower to flower, and the air is sweet with the scent of summer.</span></p>
+                <p>And then you see them: <span class="highlight">orange butterflies</span>. The same bright orange butterflies that caught your attention this morning!</p>
+                <p>They swirl around your head as if recognizing you, then flutter ahead down the path.</p>
+                <p><em>"Looks like you've got an escort,"</em> Maya laughs.</p>
+                <p>Through the flowers, you can see colorful flags and hear voices — <span class="discovery">Camp Pinecone is just ahead!</span></p>`,
+                statChanges: { morale: 30 },
+                choices: [
+                    { text: 'Run toward home!', icon: '🏃', next: 'victory', cost: '' }
+                ]
+            },
+
+            forestPath: {
+                text: `<p>The forest path is cool and peaceful. <span class="nature">Tall trees form a natural cathedral overhead, their branches filtering the sunlight into dancing green shadows.</span></p>
+                <p>You walk in comfortable silence, listening to birdsong and the soft crunch of leaves underfoot. Biscuit trots happily between you and Maya.</p>
+                <p>A <span class="discovery">red squirrel</span> follows you from branch to branch, curious about the travelers.</p>
+                <p>After a short walk, the trees begin to thin. Through the gaps, you can see colorful flags fluttering in the breeze — <span class="discovery">Camp Pinecone!</span></p>
+                <p>You can hear voices now — familiar voices — and someone is calling your name.</p>`,
+                statChanges: { morale: 25, energy: 10 },
+                choices: [
+                    { text: 'Head toward the voices!', icon: '🏃', next: 'victory', cost: '' }
+                ]
+            },
+
+            askMaya: {
+                text: `<p><em>"Hmm,"</em> Maya considers. <em>"They're about the same distance. But the meadow is really pretty this time of year — lots of butterflies! I'd go that way."</em></p>
+                <p>She gives Biscuit's leash a gentle tug. <em>"Lead the way, Biscuit!"</em></p>
+                <p>The golden retriever barks happily and sets off down the left path, tail wagging like a metronome.</p>`,
+                statChanges: { morale: 10 },
+                knowledge: "Don't be afraid to ask for advice from people who know more than you. Learning from others is a sign of wisdom.",
+                choices: [
+                    { text: 'Follow Biscuit to the meadow', icon: '🐕', next: 'meadowPath', cost: '' }
+                ]
+            },
+
+            restByStream: {
+                text: `<p>You find a flat, dry rock beside the stream and sit down. The cool water feels wonderful as you cup it in your hands and drink.</p>
+                <p><span class="nature">For a moment, you just breathe. The stream burbles peacefully. A butterfly lands briefly on a nearby flower. Somewhere upstream, a frog croaks lazily.</span></p>
+                <p>You feel your strength returning. This was a good choice — you can't make good decisions when you're exhausted and thirsty.</p>
+                <p>Now, refreshed, you notice the footprints on the bank with clearer eyes. They're definitely fresh...</p>`,
+                statChanges: { energy: 30, thirst: 40, morale: 20 },
+                knowledge: "Taking time to rest and drink water helps you think more clearly. Never push yourself to exhaustion.",
+                choices: [
+                    { text: 'Follow those footprints', icon: '👣', next: 'followTracks', cost: '' },
+                    { text: 'Follow the stream downstream', icon: '🌊', next: 'followStream', cost: '' }
+                ]
+            },
+
+            followStream: {
+                text: `<p>You walk alongside the stream, using its gentle current as your guide. The terrain is uneven but manageable.</p>
+                <p>After walking for a while, you spot something ahead — <span class="discovery">a small wooden bridge!</span></p>
+                <p>Where there's a bridge, there's a trail. Where there's a trail, there are people.</p>
+                <p>Beyond the bridge, you can see colorful flags fluttering in the distance. A sign points the way: <span class="highlight">"Camp Sunshine ← → Camp Pinecone"</span></p>
+                <p>You made it!</p>`,
+                statChanges: { energy: -15, morale: 40 },
+                knowledge: "Following water downstream almost always leads to civilization. Rivers are nature's highways.",
+                choices: [
+                    { text: 'Head to Camp Pinecone!', icon: '🏕️', next: 'victory', cost: '' }
+                ]
+            },
+
+            // Additional scenes for fuller gameplay
+            climbTree: {
+                text: `<p>You find a sturdy pine with low branches and begin to climb. The bark is rough but provides good grip.</p>
+                <p>From about twenty feet up, you can see over the underbrush. <span class="discovery">The stream is visible now</span>, a silver ribbon winding through the forest to your left. And in the distance — <span class="discovery">flags! Colorful flags like the ones at camp!</span></p>
+                <p><span class="nature">A bird lands on a branch nearby and regards you with a cocked head, surprised to find a human so high up.</span></p>`,
+                statChanges: { energy: -15 },
+                knowledge: "Climbing gives you perspective, but always be careful. Only climb as high as feels safe.",
+                choices: [
+                    { text: 'Climb down and head to the stream', icon: '💧', next: 'findStream', cost: '' },
+                    { text: 'Climb down and walk toward the flags', icon: '🚩', next: 'victory', cost: '' }
+                ]
+            },
+
+            markAndExplore: {
+                text: `<p>Before leaving, you create a marker — stacking three stones on top of each other and placing a branch upright beside them. If you need to return, you'll find this spot again.</p>
+                <p>Smart thinking.</p>
+                <p>As you explore the surrounding area, you find several useful items: a <span class="highlight">piece of rope</span> tangled in the bushes, and some <span class="highlight">edible dandelions</span>.</p>
+                <p><span class="nature">The forest feels less threatening now that you're taking action.</span></p>`,
+                statChanges: { morale: 15 },
+                addItem: { name: 'Rope', icon: '🪢' },
+                knowledge: "Always mark your path when exploring. Trail markers help you retrace your steps if you get lost.",
+                choices: [
+                    { text: 'Follow the sound of water', icon: '💧', next: 'findStream', cost: '' },
+                    { text: 'Keep exploring carefully', icon: '🔍', next: 'exploreDeeper', cost: '' }
+                ]
+            },
+
+            eatBerries: {
+                text: `<p>You carefully examine the berries — they look just like the wild blueberries the camp counselor showed you during nature class. Small, round, with a dusty blue color.</p>
+                <p>You eat a handful. They're sweet and juicy, and you feel energy returning to your limbs.</p>
+                <p><span class="nature">A jay lands nearby, eyeing your berries with obvious interest.</span></p>`,
+                statChanges: { hunger: 25, energy: 15, morale: 10 },
+                removeItem: 'Wild Berries',
+                knowledge: "Never eat wild berries unless you're absolutely sure what they are. When in doubt, don't eat!",
+                choices: [
+                    { text: 'Look for water now', icon: '💧', next: 'findStream', cost: '' },
+                    { text: 'Continue exploring', icon: '🌲', next: 'exploreDeeper', cost: '' }
+                ]
+            },
+
+            exploreDeeper: {
+                text: `<p>You push deeper into the forest. The trees grow closer together here, but beams of sunlight still find their way through.</p>
+                <p>You discover a <span class="discovery">small clearing</span> with signs of recent human activity — a circle of stones that was once a fire pit, and a torn piece of fabric caught on a branch.</p>
+                <p>This could be a good place to rest if you needed to spend the night... but hopefully it won't come to that.</p>
+                <p>Through the trees to your left, you hear the distinct sound of <span class="discovery">running water</span>.</p>`,
+                statChanges: { energy: -10 },
+                choices: [
+                    { text: 'Follow the water sound', icon: '💧', next: 'findStream', cost: '' },
+                    { text: 'Search the old campsite', icon: '🔍', next: 'searchCampsite', cost: '' }
+                ]
+            },
+
+            searchCampsite: {
+                text: `<p>You carefully search the abandoned campsite. Whoever was here left in a hurry.</p>
+                <p>In the ashes of the fire pit, you find a <span class="highlight">metal water bottle</span> — still usable! And near the edge of the clearing, there's a <span class="highlight">trail marker</span> pointing east with the words "CAMP ➡️" scratched into the wood.</p>
+                <p>Someone left you a sign!</p>`,
+                statChanges: { morale: 25 },
+                addItem: { name: 'Water Bottle', icon: '🫗' },
+                choices: [
+                    { text: 'Follow the trail marker east', icon: '🧭', next: 'followMarker', cost: '' },
+                    { text: 'Check for water first', icon: '💧', next: 'findStream', cost: '' }
+                ]
+            },
+
+            followMarker: {
+                text: `<p>You follow the direction of the trail marker, and sure enough, you find a path! It's overgrown but definitely man-made.</p>
+                <p>As you walk, you hear voices ahead. Then you see them — <span class="discovery">colorful flags through the trees!</span></p>
+                <p>You start walking faster, then jogging. The trees open up and there it is: Camp Pinecone, with counselors and kids and the big wooden welcome sign.</p>
+                <p>Someone spots you and points. <em>"There! THERE!"</em></p>
+                <p>You made it.</p>`,
+                statChanges: { morale: 40 },
+                choices: [
+                    { text: 'Run home!', icon: '🏕️', next: 'victory', cost: '' }
+                ]
+            },
+
+            gatherSupplies: {
+                text: `<p>Before heading out, you take time to gather what you can from the rocky outcrop and surrounding area.</p>
+                <p>You find a <span class="highlight">sharp-edged stone</span> that could serve as a tool, some <span class="highlight">dry moss</span> for tinder, and a <span class="highlight">strong stick</span> perfect for walking.</p>
+                <p><span class="nature">A hawk's cry echoes across the valley below. The forest stretches endlessly in every direction — beautiful but vast.</span></p>
+                <p>Now, which way?</p>`,
+                addItem: { name: 'Sharp Stone', icon: '🪨' },
+                addItem2: { name: 'Dry Moss', icon: '🌿' },
+                addItem3: { name: 'Walking Stick', icon: '🥢' },
+                statChanges: { energy: -5 },
+                choices: [
+                    { text: 'Head toward the stream', icon: '💧', next: 'findStream', cost: '' },
+                    { text: 'Walk toward the smoke', icon: '💨', next: 'findSmoke', cost: '' }
+                ]
+            },
+
+            findSmoke: {
+                text: `<p>You walk toward where you saw the smoke rising. The journey takes you through dense forest, but you keep your bearings by occasionally checking the sun's position.</p>
+                <p>After what feels like an hour, you emerge into a clearing and find the source of the smoke: <span class="discovery">a campfire!</span></p>
+                <p>But it's not just any campfire. There's a small orange tent nearby, and a woman in a ranger uniform is cooking something over the flames. She looks up as you approach.</p>
+                <p><em>"Well hello there! Are you from one of the summer camps? You look a little lost, friend."</em></p>`,
+                statChanges: { morale: 30, warmth: 20 },
+                choices: [
+                    { text: 'Ask the ranger for help', icon: '🏕️', next: 'rangerHelp', cost: '' }
+                ]
+            },
+
+            rangerHelp: {
+                text: `<p>The ranger's name is Sam, and she's been patrolling this section of the forest for years.</p>
+                <p><em>"Camp Pinecone, you say? That's about a twenty-minute walk from here. I was about to head that direction anyway — got to check the eastern trails."</em></p>
+                <p>She gives you some <span class="highlight">trail mix</span> and a <span class="highlight">water bottle</span>, then leads the way through the forest with practiced ease.</p>
+                <p>True to her word, twenty minutes later you see the familiar flags of camp through the trees.</p>
+                <p><em>"Here we are! You did well staying calm out there. That's the most important thing."</em></p>`,
+                statChanges: { hunger: 30, thirst: 30, morale: 40 },
+                choices: [
+                    { text: 'Thank her and head to camp!', icon: '🏕️', next: 'victory', cost: '' }
+                ]
+            },
+
+            victory: {
+                isVictory: true
+            }
+        };
+
+        // ========== RENDERING ==========
+        function createTrees() {
+            ['treesBack', 'treesMid', 'treesFront'].forEach((id, layerIdx) => {
+                const container = document.getElementById(id);
+                const count = layerIdx === 2 ? 6 : 8;
+                for (let i = 0; i < count; i++) {
+                    const tree = document.createElement('div');
+                    tree.className = 'tree';
+                    tree.innerHTML = `
+                        <div class="tree-top"></div>
+                        <div class="tree-top-2"></div>
+                        <div class="tree-trunk"></div>
+                    `;
+                    tree.style.transform = `translateX(${(Math.random() - 0.5) * 30}px)`;
+                    container.appendChild(tree);
+                }
+            });
+        }
+
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = (Math.random() * 2 + 1) + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function createFireflies() {
+            const container = document.getElementById('fireflies');
+            for (let i = 0; i < 15; i++) {
+                const firefly = document.createElement('div');
+                firefly.className = 'firefly';
+                firefly.style.left = (20 + Math.random() * 60) + '%';
+                firefly.style.top = (40 + Math.random() * 40) + '%';
+                firefly.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(firefly);
+            }
+        }
+
+        function createRain() {
+            const container = document.getElementById('rain');
+            for (let i = 0; i < 100; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'raindrop';
+                drop.style.left = Math.random() * 100 + '%';
+                drop.style.animationDelay = Math.random() * 1 + 's';
+                container.appendChild(drop);
+            }
+        }
+
+        function updateScene() {
+            const sky = document.getElementById('sky');
+            const stars = document.getElementById('stars');
+            const celestial = document.getElementById('celestial');
+            const overlay = document.getElementById('sceneOverlay');
+            const fireflies = document.querySelectorAll('.firefly');
+
+            // Update sky
+            sky.className = 'sky ' + ['morning', 'day', 'evening', 'night'][game.timeOfDay];
+
+            // Update stars
+            stars.classList.toggle('visible', game.timeOfDay === 3);
+
+            // Update sun/moon
+            celestial.className = 'celestial ' + (game.timeOfDay === 3 ? 'moon' : 'sun');
+            const positions = [
+                { top: '25%', left: '25%' },
+                { top: '15%', left: '50%' },
+                { top: '30%', left: '70%' },
+                { top: '20%', left: '60%' }
+            ];
+            celestial.style.top = positions[game.timeOfDay].top;
+            celestial.style.left = positions[game.timeOfDay].left;
+
+            // Update overlay
+            overlay.className = 'scene-overlay ' + ['', '', 'evening', 'night'][game.timeOfDay];
+
+            // Update fireflies
+            fireflies.forEach(f => f.classList.toggle('visible', game.timeOfDay >= 2));
+
+            // Update campfire and shelter
+            document.getElementById('campfire').classList.toggle('visible', game.hasFire);
+            document.getElementById('shelter').classList.toggle('visible', game.hasShelter);
+
+            // Update rain
+            document.getElementById('rain').classList.toggle('visible', game.weather === 'rain' || game.weather === 'storm');
+        }
+
+        function updateUI() {
+            // Day and time
+            document.getElementById('dayNumber').textContent = `Day ${game.day}`;
+            document.getElementById('timeDisplay').textContent = `${timeNames[game.timeOfDay]} • ${weatherNames[game.weather]}`;
+
+            // Status bars
+            document.getElementById('healthBar').style.width = game.health + '%';
+            document.getElementById('hungerBar').style.width = game.hunger + '%';
+            document.getElementById('thirstBar').style.width = game.thirst + '%';
+            document.getElementById('warmthBar').style.width = game.warmth + '%';
+            document.getElementById('energyBar').style.width = game.energy + '%';
+            document.getElementById('moraleBar').style.width = game.morale + '%';
+
+            // Inventory
+            const invEl = document.getElementById('inventory');
+            if (game.inventory.length === 0) {
+                invEl.innerHTML = '<span class="inv-empty">Your pockets are empty...</span>';
+            } else {
+                invEl.innerHTML = game.inventory.map(item =>
+                    `<div class="inv-item">${item.icon} ${item.name}</div>`
+                ).join('');
+            }
+
+            updateScene();
+        }
+
+        function renderScene(sceneId) {
+            const scene = scenes[sceneId];
+
+            if (scene.isVictory) {
+                showVictory();
+                return;
+            }
+
+            // Apply stat changes
+            if (scene.statChanges) {
+                for (let stat in scene.statChanges) {
+                    game[stat] = Math.max(0, Math.min(100, game[stat] + scene.statChanges[stat]));
+                }
+            }
+
+            // Add items
+            if (scene.addItem && !game.inventory.find(i => i.name === scene.addItem.name)) {
+                game.inventory.push(scene.addItem);
+            }
+            if (scene.addItem2 && !game.inventory.find(i => i.name === scene.addItem2.name)) {
+                game.inventory.push(scene.addItem2);
+            }
+            if (scene.addItem3 && !game.inventory.find(i => i.name === scene.addItem3.name)) {
+                game.inventory.push(scene.addItem3);
+            }
+
+            // Remove items
+            if (scene.removeItem) {
+                game.inventory = game.inventory.filter(i => i.name !== scene.removeItem);
+            }
+
+            // Add skill
+            if (scene.knowledge && !game.skills.includes(scene.knowledge)) {
+                game.skills.push(scene.knowledge);
+            }
+
+            // Update UI
+            updateUI();
+
+            // Render story
+            document.getElementById('storyText').innerHTML = scene.text;
+
+            // Render choices
+            const choicesEl = document.getElementById('choicesSection');
+            choicesEl.innerHTML = scene.choices.map(choice => `
+                <button class="choice-btn" onclick="makeChoice('${choice.next}')">
+                    <span class="choice-icon">${choice.icon}</span>
+                    <div class="choice-text">${choice.text}</div>
+                    ${choice.cost ? `<span class="choice-cost">${choice.cost}</span>` : ''}
+                </button>
+            `).join('');
+
+            // Show knowledge popup
+            if (scene.knowledge) {
+                setTimeout(() => showKnowledge(scene.knowledge), 1000);
+            }
+
+            // Scroll story to top
+            document.getElementById('storySection').scrollTop = 0;
+        }
+
+        function makeChoice(nextScene) {
+            if (!audioCtx) initAudio();
+            playSound('click');
+
+            game.actionsToday++;
+
+            // Time advances every few actions
+            if (game.actionsToday >= 3) {
+                game.actionsToday = 0;
+                advanceTime();
+            }
+
+            game.scene = nextScene;
+            renderScene(nextScene);
+        }
+
+        function advanceTime() {
+            game.timeOfDay++;
+            if (game.timeOfDay > 3) {
+                game.timeOfDay = 0;
+                game.day++;
+                game.totalDays++;
+
+                // Night penalties
+                game.warmth = Math.max(0, game.warmth - 15);
+                game.energy = Math.max(0, game.energy - 10);
+            }
+
+            // Random weather changes
+            if (Math.random() < 0.2) {
+                const weathers = ['clear', 'clear', 'cloudy', 'rain'];
+                game.weather = weathers[Math.floor(Math.random() * weathers.length)];
+            }
+        }
+
+        function showKnowledge(text) {
+            const popup = document.getElementById('knowledgePopup');
+            document.getElementById('knowledgeText').textContent = text;
+            popup.classList.add('show');
+            playSound('discovery');
+
+            setTimeout(() => popup.classList.remove('show'), 5000);
+        }
+
+        function showVictory() {
+            playSound('success');
+
+            const victoryText = document.getElementById('victoryText');
+            victoryText.innerHTML = `
+                <p>You burst through the treeline and there it is — Camp Pinecone! Counselors are pointing, kids are running toward you, and someone wraps a warm blanket around your shoulders.</p>
+                <p>You're safe. You made it home.</p>
+                <p style="margin-top: 15px; color: #d4a056;">Not because you were lucky — but because you were <strong>calm</strong>, <strong>observant</strong>, and <strong>smart</strong>.</p>
+            `;
+
+            const statsEl = document.getElementById('victoryStats');
+            statsEl.innerHTML = `
+                <div class="victory-stat">
+                    <div class="victory-stat-value">${game.totalDays}</div>
+                    <div class="victory-stat-label">Day${game.totalDays > 1 ? 's' : ''} Survived</div>
+                </div>
+                <div class="victory-stat">
+                    <div class="victory-stat-value">${game.inventory.length}</div>
+                    <div class="victory-stat-label">Items Found</div>
+                </div>
+                <div class="victory-stat">
+                    <div class="victory-stat-value">${game.skills.length}</div>
+                    <div class="victory-stat-label">Skills Learned</div>
+                </div>
+            `;
+
+            document.getElementById('victoryOverlay').classList.add('show');
+        }
+
+        function restartGame() {
+            // Reset game state
+            game.day = 1;
+            game.timeOfDay = 0;
+            game.weather = 'clear';
+            game.health = 100;
+            game.hunger = 80;
+            game.thirst = 80;
+            game.warmth = 70;
+            game.energy = 90;
+            game.morale = 75;
+            game.inventory = [];
+            game.skills = [];
+            game.hasShelter = false;
+            game.hasFire = false;
+            game.scene = 'intro';
+            game.actionsToday = 0;
+            game.totalDays = 1;
+
+            document.getElementById('victoryOverlay').classList.remove('show');
+            updateUI();
+            renderScene('intro');
+        }
+
+        // ========== INITIALIZATION ==========
+        createTrees();
+        createStars();
+        createFireflies();
+        createRain();
+        updateUI();
+        renderScene('intro');
+    </script>
+</body>
+</html>
