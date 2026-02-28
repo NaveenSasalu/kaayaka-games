@@ -255,7 +255,7 @@
 
         /* Left Panel - Reference */
         .left-panel {
-            width: 180px;
+            width: 220px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
@@ -320,7 +320,7 @@
 
         /* Bottom Pieces Tray */
         .pieces-section {
-            height: 130px;
+            height: 160px;
             flex-shrink: 0;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
@@ -856,24 +856,36 @@
         }
 
         // ========== START GAME ==========
+        function computePieceSize(grid) {
+            // Measure available board space and size pieces to fill it
+            const gameScreen = document.getElementById('gameScreen');
+            gameScreen.classList.add('active');
+
+            const boardEl = document.querySelector('.board-section');
+            const boardRect = boardEl.getBoundingClientRect();
+            // Leave padding inside the board area
+            const availW = boardRect.width - 40;
+            const availH = boardRect.height - 40;
+            const available = Math.min(availW, availH);
+            // base = available / grid, with tab = base * 0.2
+            const base = Math.floor(available / grid);
+            const tab = Math.max(8, Math.floor(base * 0.2));
+            return { base, tab };
+        }
+
         function startGame() {
             if (!state.image && !state.pattern) {
                 toast('Select an image or pattern', 'warn');
                 return;
             }
 
-            const settings = {
-                1: { grid: 2, base: 140, tab: 28 },
-                2: { grid: 3, base: 110, tab: 22 },
-                3: { grid: 4, base: 95, tab: 19 },
-                4: { grid: 5, base: 80, tab: 16 },
-                5: { grid: 6, base: 68, tab: 14 }
-            };
+            const gridSizes = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 };
+            const grid = gridSizes[state.difficulty];
+            const { base, tab } = computePieceSize(grid);
 
-            const s = settings[state.difficulty];
-            state.gridSize = s.grid;
-            state.baseSize = s.base;
-            state.tabSize = s.tab;
+            state.gridSize = grid;
+            state.baseSize = base;
+            state.tabSize = tab;
             state.totalPieces = s.grid * s.grid;
             state.pieces = [];
             state.placed = new Set();
@@ -960,12 +972,13 @@
         }
 
         function finalize(canvas) {
-            // Reference
+            // Reference — size to left panel width
             const ref = document.getElementById('referenceCanvas');
-            ref.width = 160;
-            ref.height = 160;
+            const refSize = document.querySelector('.left-panel')?.getBoundingClientRect().width - 20 || 200;
+            ref.width = refSize;
+            ref.height = refSize;
             ref.getContext('2d').drawImage(canvas, state.tabSize, state.tabSize,
-                state.gridSize * state.baseSize, state.gridSize * state.baseSize, 0, 0, 160, 160);
+                state.gridSize * state.baseSize, state.gridSize * state.baseSize, 0, 0, refSize, refSize);
 
             // Pieces
             const grid = state.gridSize;
@@ -1030,7 +1043,7 @@
             tray.innerHTML = '';
 
             const remaining = state.pieces.filter(p => !state.placed.has(p.id)).sort(() => Math.random() - 0.5);
-            const displaySize = 70;
+            const displaySize = Math.min(100, Math.max(60, state.baseSize * 0.7));
             const scale = displaySize / state.baseSize;
 
             remaining.forEach(piece => {

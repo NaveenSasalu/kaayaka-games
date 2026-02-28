@@ -79,12 +79,13 @@
         .main {
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 20px;
+            gap: 25px;
             flex: 1;
             min-height: 0;
-            max-width: 1300px;
+            max-width: 1400px;
             margin: 0 auto;
             width: 100%;
+            padding: 0 10px;
         }
 
         @media (max-width: 1000px) {
@@ -111,8 +112,8 @@
         /* Sudoku Grid */
         .sudoku-grid {
             display: grid;
-            grid-template-columns: repeat(9, 42px);
-            grid-template-rows: repeat(9, 42px);
+            grid-template-columns: repeat(9, var(--cell-size, 56px));
+            grid-template-rows: repeat(9, var(--cell-size, 56px));
             gap: 1px;
             background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
             padding: 2px;
@@ -121,12 +122,12 @@
         }
 
         .sudoku-grid .cell {
-            width: 42px;
-            height: 42px;
+            width: var(--cell-size, 56px);
+            height: var(--cell-size, 56px);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: clamp(16px, calc(var(--cell-size, 56px) * 0.45), 28px);
             font-weight: 600;
             background: rgba(30, 30, 60, 0.8);
             color: #fff;
@@ -1748,7 +1749,22 @@
             _origClearGrid();
         };
 
+        function sizeSudokuGrid() {
+            const gridCard = document.querySelector('.grid-card');
+            if (!gridCard) return;
+            const cardW = gridCard.getBoundingClientRect().width - 44; // padding
+            const vh = window.innerHeight;
+            // Height budget: vh minus header(~70) minus controls(~200) minus padding(~60)
+            const cardH = vh - 330;
+            const available = Math.min(cardW, cardH);
+            const cellSize = Math.max(36, Math.min(64, Math.floor(available / 9.2)));
+            document.querySelector('.sudoku-grid').style.setProperty('--cell-size', cellSize + 'px');
+        }
+
+        window.addEventListener('resize', sizeSudokuGrid);
+
         initGrid();
+        sizeSudokuGrid();
 
         // Restore saved state
         const savedSudoku = loadSudokuState();
