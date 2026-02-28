@@ -721,8 +721,8 @@
 
         .victory-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
             margin-bottom: 30px;
         }
 
@@ -775,6 +775,48 @@
             border-radius: 4px;
         }
 
+        /* Back Button + Branding */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        .kaayaka-back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .kaayaka-back-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .kaayaka-branding {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+        }
+        .kaayaka-branding a {
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .kaayaka-branding a:hover { color: rgba(255,255,255,0.6); }
+
         /* Responsive */
         @media (max-width: 900px) {
             .game-wrapper {
@@ -797,6 +839,8 @@
     </style>
 </head>
 <body>
+    <a href="index.html" class="kaayaka-back-btn">← Games</a>
+    <div class="kaayaka-branding"><a href="https://kaayaka.in">Kaayaka Games</a></div>
     <div class="game-wrapper">
         <!-- Forest Scene -->
         <div class="scene-container">
@@ -1014,7 +1058,8 @@
                 choices: [
                     { text: 'Look for high ground', icon: '🏔️', next: 'lookHighGround', cost: 'Uses energy' },
                     { text: 'Listen carefully to your surroundings', icon: '👂', next: 'listenCarefully', cost: 'Takes time' },
-                    { text: 'Search the immediate area', icon: '🔍', next: 'searchArea', cost: 'Uses energy' }
+                    { text: 'Search the immediate area', icon: '🔍', next: 'searchArea', cost: 'Uses energy' },
+                    { text: 'Stay put and mark your location', icon: '📍', next: 'stayAndMark', cost: 'Patient strategy' }
                 ]
             },
 
@@ -1252,7 +1297,8 @@
                 statChanges: { energy: -10 },
                 choices: [
                     { text: 'Follow the water sound', icon: '💧', next: 'findStream', cost: '' },
-                    { text: 'Search the old campsite', icon: '🔍', next: 'searchCampsite', cost: '' }
+                    { text: 'Search the old campsite', icon: '🔍', next: 'searchCampsite', cost: '' },
+                    { text: 'Push even deeper into the forest', icon: '🌿', next: 'exploreDeepPath', cost: 'Risky' }
                 ]
             },
 
@@ -1291,7 +1337,8 @@
                 statChanges: { energy: -5 },
                 choices: [
                     { text: 'Head toward the stream', icon: '💧', next: 'findStream', cost: '' },
-                    { text: 'Walk toward the smoke', icon: '💨', next: 'findSmoke', cost: '' }
+                    { text: 'Walk toward the smoke', icon: '💨', next: 'findSmoke', cost: '' },
+                    { text: 'Try to build a fire', icon: '🔥', next: 'buildFire', cost: 'Needs Sharp Stone + Bark/Moss', requires: ['Sharp Stone'], requiresAny: ['Dry Bark', 'Dry Moss'] }
                 ]
             },
 
@@ -1314,12 +1361,117 @@
                 <p><em>"Here we are! You did well staying calm out there. That's the most important thing."</em></p>`,
                 statChanges: { hunger: 30, thirst: 30, morale: 40 },
                 choices: [
-                    { text: 'Thank her and head to camp!', icon: '🏕️', next: 'victory', cost: '' }
+                    { text: 'Thank her and head to camp!', icon: '🏕️', next: 'victoryRanger', cost: '' }
                 ]
             },
 
+            // ======= NEW SCENES: Alternate paths =======
+            buildFire: {
+                text: `<p>You gather your Sharp Stone and Dry Bark together. Using the stone to create sparks on the bark, you work patiently.</p>
+                <p><span class="nature">Spark after spark falls on the tinder. Then — a tiny ember glows to life!</span></p>
+                <p>You gently blow on it, feeding small twigs. Within minutes, a <span class="discovery">warm campfire</span> crackles before you!</p>
+                <p><span class="highlight">You've built a fire!</span> The warmth is immediate and wonderful.</p>`,
+                statChanges: { warmth: 40, morale: 25 },
+                setFire: true,
+                knowledge: "Building a fire requires tinder, fuel, and a spark source. Patience is key!",
+                choices: [
+                    { text: 'Signal for help with smoke', icon: '🔥', next: 'signalFire', cost: 'Needs high ground' },
+                    { text: 'Rest by the fire', icon: '😌', next: 'restByFire', cost: '+Energy +Warmth' },
+                    { text: 'Keep exploring with renewed warmth', icon: '🌲', next: 'exploreDeeper', cost: '' }
+                ]
+            },
+
+            restByFire: {
+                text: `<p>You sit close to the fire, letting its warmth seep into your bones. The crackling flames are hypnotic and comforting.</p>
+                <p><span class="nature">Shadows dance among the trees. An owl hoots somewhere above.</span></p>
+                <p>You feel much better — rested, warm, and ready to continue.</p>`,
+                statChanges: { energy: 35, warmth: 30, morale: 15 },
+                choices: [
+                    { text: 'Look for a way home', icon: '🏠', next: 'findStream', cost: '' },
+                    { text: 'Signal for help with smoke', icon: '🔥', next: 'signalFire', cost: '' }
+                ]
+            },
+
+            signalFire: {
+                text: `<p>You add green leaves and damp moss to your campfire. Thick white smoke rises high above the treeline, visible for miles!</p>
+                <p><span class="nature">The column of smoke stands out against the blue sky like a beacon.</span></p>
+                <p>You wait, keeping the signal going. Minutes pass. Then — <span class="discovery">the distant thud of a helicopter!</span></p>
+                <p>A search helicopter circles twice, then descends toward a clearing nearby. <em>"We see you! Stay where you are!"</em> booms a loudspeaker.</p>`,
+                statChanges: { morale: 50 },
+                knowledge: "A signal fire with green vegetation creates white smoke visible from far away — a universal distress signal.",
+                choices: [
+                    { text: 'Wave and wait for rescue!', icon: '🚁', next: 'victorySignalFire', cost: '' }
+                ]
+            },
+
+            victorySignalFire: {
+                isVictory: true,
+                endingId: 'signal_fire',
+                victoryTitle: '🚁 Rescued by Signal Fire!',
+                victoryText: `<p>A rescue team reaches you within minutes. They're impressed — not many people know how to build a proper signal fire.</p>
+                    <p>You're airlifted back to camp, where everyone cheers your return.</p>
+                    <p style="margin-top: 15px; color: #d4a056;">Your <strong>survival skills</strong> and <strong>resourcefulness</strong> brought you home!</p>`
+            },
+
+            exploreDeepPath: {
+                text: `<p>You push deeper into the untamed forest, following a faint animal trail that winds between ancient trees.</p>
+                <p>The trees here are enormous — older than anything you've seen before. The canopy is so thick it's like twilight.</p>
+                <p>Then you see it — half-hidden by ivy and ferns — <span class="discovery">an old wooden cabin!</span></p>
+                <p>Its roof is patchy and the door hangs slightly open, but it's clearly man-made. A rusted sign reads: <span class="highlight">"Ranger Station #7 — Est. 1962"</span></p>`,
+                statChanges: { morale: 20, energy: -10 },
+                choices: [
+                    { text: 'Enter the cabin carefully', icon: '🏚️', next: 'victoryCabin', cost: '' },
+                    { text: 'Look around outside first', icon: '🔍', next: 'victoryCabin', cost: '' }
+                ]
+            },
+
+            victoryCabin: {
+                isVictory: true,
+                endingId: 'abandoned_cabin',
+                victoryTitle: '🏚️ Found the Abandoned Cabin!',
+                victoryText: `<p>Inside the cabin, you find a dusty but working radio! You tune through the channels until you hear voices — it's the park ranger frequency!</p>
+                    <p>Within an hour, a ranger arrives on an ATV to bring you home.</p>
+                    <p style="margin-top: 15px; color: #d4a056;">Your <strong>curiosity</strong> and <strong>courage</strong> to explore the unknown saved you!</p>`
+            },
+
+            stayAndMark: {
+                text: `<p>You decide to stay near your starting point. It's smart — you mark the area by tying strips of fabric to branches and building a large X on the ground with fallen logs.</p>
+                <p><span class="nature">Hours pass. You keep yourself busy improving your signal markers.</span></p>
+                <p>Then you hear it — voices calling your name! <span class="discovery">A search party!</span></p>
+                <p><em>"Over here! We found the markers!"</em></p>`,
+                statChanges: { morale: 30 },
+                knowledge: "Staying near where you were last seen makes it much easier for search parties to find you.",
+                choices: [
+                    { text: 'Call back to them!', icon: '📢', next: 'victorySearchParty', cost: '' }
+                ]
+            },
+
+            victorySearchParty: {
+                isVictory: true,
+                endingId: 'search_party',
+                victoryTitle: '🔍 Found by Search Party!',
+                victoryText: `<p>The search team finds you quickly, guided by the clever markers you left. They're a group of camp counselors and a park ranger.</p>
+                    <p>"Smart kid," the ranger says with a nod. "Staying put and marking your location — that's textbook survival."</p>
+                    <p style="margin-top: 15px; color: #d4a056;">Your <strong>patience</strong> and <strong>smart marking</strong> made rescue easy!</p>`
+            },
+
+            victoryRanger: {
+                isVictory: true,
+                endingId: 'ranger_rescue',
+                victoryTitle: '🏕️ Ranger Rescue!',
+                victoryText: `<p>Ranger Sam leads you through the forest with practiced ease. Twenty minutes later, you see the familiar flags of Camp Pinecone.</p>
+                    <p>"Here we are! You did well staying calm out there."</p>
+                    <p style="margin-top: 15px; color: #d4a056;">Sometimes the bravest thing is <strong>accepting help</strong> when it's offered!</p>`
+            },
+
+            // Default victory (meetMaya path, stream bridge, climb flags, follow marker)
             victory: {
-                isVictory: true
+                isVictory: true,
+                endingId: 'default',
+                victoryTitle: '🏠 You Made It Home!',
+                victoryText: `<p>You burst through the treeline and there it is — Camp Pinecone! Counselors are pointing, kids are running toward you, and someone wraps a warm blanket around your shoulders.</p>
+                    <p>You're safe. You made it home.</p>
+                    <p style="margin-top: 15px; color: #d4a056;">Not because you were lucky — but because you were <strong>calm</strong>, <strong>observant</strong>, and <strong>smart</strong>.</p>`
             }
         };
 
@@ -1451,10 +1603,15 @@
                 return;
             }
 
-            // Apply stat changes
+            // Apply stat changes (Walking Stick reduces energy costs)
             if (scene.statChanges) {
+                const hasStick = game.inventory.find(i => i.name === 'Walking Stick');
                 for (let stat in scene.statChanges) {
-                    game[stat] = Math.max(0, Math.min(100, game[stat] + scene.statChanges[stat]));
+                    let change = scene.statChanges[stat];
+                    if (stat === 'energy' && change < 0 && hasStick) {
+                        change = Math.round(change * 0.6); // 40% less energy cost
+                    }
+                    game[stat] = Math.max(0, Math.min(100, game[stat] + change));
                 }
             }
 
@@ -1472,6 +1629,11 @@
             // Remove items
             if (scene.removeItem) {
                 game.inventory = game.inventory.filter(i => i.name !== scene.removeItem);
+            }
+
+            // Set fire flag
+            if (scene.setFire) {
+                game.hasFire = true;
             }
 
             // Add skill
@@ -1504,9 +1666,81 @@
             document.getElementById('storySection').scrollTop = 0;
         }
 
+        // ========== RANDOM EVENTS ==========
+        const randomEvents = [
+            {
+                text: `<p><span class="nature">A beautiful deer steps into the clearing ahead of you, its ears perked. It regards you calmly for a long moment before bounding away through the ferns.</span></p>
+                    <p><span class="highlight">The encounter fills you with a quiet peace.</span></p>`,
+                statChanges: { morale: 15 },
+                name: 'Deer Sighting'
+            },
+            {
+                text: `<p><span class="warning">Dark clouds roll in suddenly and rain begins to fall!</span> Fat droplets patter through the leaves above you.</p>
+                    <p>You hurry to find cover under a thick pine.</p>`,
+                statChanges: { warmth: -15, morale: -5 },
+                triggerRain: true,
+                name: 'Sudden Rain'
+            },
+            {
+                text: `<p>You spot a cluster of <span class="discovery">mushrooms</span> growing at the base of a tree. They look edible, but you're not entirely sure...</p>
+                    <p>${Math.random() > 0.5 ? `You decide to eat a small one — it tastes earthy but fine. <span class="highlight">Lucky!</span>` : `You decide it's not worth the risk and leave them.`}</p>`,
+                statChanges: Math.random() > 0.5 ? { hunger: 15, morale: 5 } : { morale: 5 },
+                name: 'Wild Mushrooms'
+            },
+            {
+                text: `<p><span class="nature">A small bird flutters down and lands on a branch right in front of you. It chirps insistently and then hops from branch to branch, as if beckoning you to follow.</span></p>
+                    <p><span class="highlight">You feel strangely reassured.</span></p>`,
+                statChanges: { morale: 10 },
+                name: 'Bird Guide'
+            },
+            {
+                text: `<p><span class="warning">A rustling in the bushes makes you freeze!</span> A snake slithers across the path ahead.</p>
+                    <p>${game.inventory.find(i => i.name === 'Walking Stick') ? `You use your walking stick to safely redirect it. Smart!` : `You step back carefully, heart pounding. It passes without incident — but that was close.`}</p>`,
+                statChanges: game.inventory.find(i => i.name === 'Walking Stick') ? { morale: 5 } : { health: -10, morale: -10 },
+                name: 'Snake Encounter'
+            },
+            {
+                text: `<p>You find a small patch of <span class="discovery">wild strawberries</span> growing in a sunny spot! They're unmistakable — bright red and tiny.</p>
+                    <p>You eat a handful. Sweet and delicious!</p>`,
+                statChanges: { hunger: 20, morale: 10 },
+                name: 'Wild Strawberries'
+            },
+            {
+                text: `<p><span class="nature">The wind picks up and the trees sway overhead. Leaves spiral down around you like nature's confetti.</span></p>
+                    <p>It's beautiful, but the temperature drops noticeably.</p>`,
+                statChanges: { warmth: -10, morale: 5 },
+                name: 'Gusty Wind'
+            },
+            {
+                text: `<p>You stumble upon a <span class="discovery">trail marker</span> — three stones stacked on top of each other. Someone else has been here!</p>
+                    <p><span class="highlight">You're on a path humans have walked before.</span></p>`,
+                statChanges: { morale: 20 },
+                name: 'Trail Marker Found'
+            }
+        ];
+
+        function triggerRandomEvent() {
+            const event = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+            // Apply stat changes
+            if (event.statChanges) {
+                for (let stat in event.statChanges) {
+                    game[stat] = Math.max(0, Math.min(100, game[stat] + event.statChanges[stat]));
+                }
+            }
+            if (event.triggerRain) {
+                game.weather = 'rain';
+            }
+            updateUI();
+            showKnowledge(`Random event: ${event.name}`);
+            return event.text;
+        }
+
         function makeChoice(nextScene) {
             if (!audioCtx) initAudio();
             playSound('click');
+
+            // Track scene visit
+            trackSceneVisit(nextScene);
 
             game.actionsToday++;
 
@@ -1516,8 +1750,59 @@
                 advanceTime();
             }
 
+            // Branching: eatBerries has 15% chance of wrong berries
+            if (nextScene === 'eatBerries' && Math.random() < 0.15) {
+                game.scene = 'eatBerries';
+                renderScene('eatBerries');
+                // Override with bad berries aftermath
+                setTimeout(() => {
+                    game.health = Math.max(0, game.health - 30);
+                    game.morale = Math.max(0, game.morale - 20);
+                    updateUI();
+                    showKnowledge('Those berries were wrong! Always be 100% sure before eating wild plants.');
+                    document.getElementById('storyText').innerHTML += `
+                        <p><span class="warning">Wait... your stomach lurches. These aren't blueberries! You feel nauseous and dizzy.</span></p>
+                        <p>The sick feeling passes slowly, but it was a harsh lesson.</p>`;
+                }, 500);
+                return;
+            }
+
+            // Check if choice has requirements
+            const currentScene = scenes[game.scene];
+            if (currentScene && currentScene.choices) {
+                const choice = currentScene.choices.find(c => c.next === nextScene);
+                if (choice) {
+                    if (choice.requires) {
+                        const missing = choice.requires.filter(req => !game.inventory.find(i => i.name === req));
+                        if (missing.length > 0) {
+                            showKnowledge(`You need: ${missing.join(', ')}`);
+                            return;
+                        }
+                    }
+                    if (choice.requiresAny) {
+                        const hasAny = choice.requiresAny.some(req => game.inventory.find(i => i.name === req));
+                        if (!hasAny) {
+                            showKnowledge(`You need one of: ${choice.requiresAny.join(' or ')}`);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 20% chance of random event (not on victory or intro)
+            let eventText = '';
+            if (nextScene !== 'victory' && !nextScene.startsWith('victory') && nextScene !== 'intro' && Math.random() < 0.2) {
+                eventText = triggerRandomEvent();
+            }
+
             game.scene = nextScene;
             renderScene(nextScene);
+
+            // Prepend random event text if it occurred
+            if (eventText) {
+                const storyEl = document.getElementById('storyText');
+                storyEl.innerHTML = eventText + '<hr style="border-color:#3d2817;margin:15px 0">' + storyEl.innerHTML;
+            }
         }
 
         function advanceTime() {
@@ -1551,12 +1836,24 @@
         function showVictory() {
             playSound('success');
 
-            const victoryText = document.getElementById('victoryText');
-            victoryText.innerHTML = `
-                <p>You burst through the treeline and there it is — Camp Pinecone! Counselors are pointing, kids are running toward you, and someone wraps a warm blanket around your shoulders.</p>
-                <p>You're safe. You made it home.</p>
-                <p style="margin-top: 15px; color: #d4a056;">Not because you were lucky — but because you were <strong>calm</strong>, <strong>observant</strong>, and <strong>smart</strong>.</p>
-            `;
+            // Get the current scene's victory details
+            const currentVictoryScene = scenes[game.scene];
+            const endingId = (currentVictoryScene && currentVictoryScene.endingId) || 'default';
+            const title = (currentVictoryScene && currentVictoryScene.victoryTitle) || '🏠 You Made It Home!';
+            const text = (currentVictoryScene && currentVictoryScene.victoryText) || `
+                <p>You burst through the treeline and there it is — Camp Pinecone!</p>
+                <p>You're safe. You made it home.</p>`;
+
+            // Track this ending
+            trackEndingFound(endingId);
+            trackSceneVisit(game.scene);
+
+            const replayData = getReplayData();
+            const endingsCount = replayData.endingsFound.length;
+            const scenesCount = replayData.scenesVisited.length;
+
+            document.querySelector('.victory-title').textContent = title;
+            document.getElementById('victoryText').innerHTML = text;
 
             const statsEl = document.getElementById('victoryStats');
             statsEl.innerHTML = `
@@ -1572,13 +1869,22 @@
                     <div class="victory-stat-value">${game.skills.length}</div>
                     <div class="victory-stat-label">Skills Learned</div>
                 </div>
+                <div class="victory-stat">
+                    <div class="victory-stat-value">${endingsCount}/${TOTAL_ENDINGS}</div>
+                    <div class="victory-stat-label">Endings Found</div>
+                </div>
+                <div class="victory-stat">
+                    <div class="victory-stat-value">${scenesCount}/${ALL_SCENE_IDS.length}</div>
+                    <div class="victory-stat-label">Paths Explored</div>
+                </div>
             `;
 
             document.getElementById('victoryOverlay').classList.add('show');
+            clearForestSave();
         }
 
         function restartGame() {
-            // Reset game state
+            clearForestSave();
             game.day = 1;
             game.timeOfDay = 0;
             game.weather = 'clear';
@@ -1601,13 +1907,125 @@
             renderScene('intro');
         }
 
+        // ========== REPLAY TRACKING ==========
+        const FOREST_REPLAY_KEY = 'kaayaka_forest_replay_v1';
+        const TOTAL_ENDINGS = 5;
+
+        function getReplayData() {
+            try {
+                const raw = localStorage.getItem(FOREST_REPLAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return { endingsFound: [], scenesVisited: [] };
+        }
+
+        function saveReplayData(data) {
+            try { localStorage.setItem(FOREST_REPLAY_KEY, JSON.stringify(data)); } catch(e) {}
+        }
+
+        function trackSceneVisit(sceneId) {
+            const data = getReplayData();
+            if (!data.scenesVisited.includes(sceneId)) {
+                data.scenesVisited.push(sceneId);
+                saveReplayData(data);
+            }
+        }
+
+        function trackEndingFound(endingId) {
+            if (!endingId) return;
+            const data = getReplayData();
+            if (!data.endingsFound.includes(endingId)) {
+                data.endingsFound.push(endingId);
+                saveReplayData(data);
+            }
+        }
+
+        const ALL_SCENE_IDS = Object.keys(scenes).filter(k => !scenes[k].isVictory);
+
+        // ========== STATE PERSISTENCE ==========
+        const FOREST_SAVE_KEY = 'kaayaka_forest_v1';
+
+        function saveForestState() {
+            const data = {
+                scene: game.scene, day: game.day, timeOfDay: game.timeOfDay,
+                weather: game.weather, health: game.health, hunger: game.hunger,
+                thirst: game.thirst, warmth: game.warmth, energy: game.energy,
+                morale: game.morale, inventory: game.inventory, skills: game.skills,
+                hasShelter: game.hasShelter, hasFire: game.hasFire,
+                actionsToday: game.actionsToday, totalDays: game.totalDays
+            };
+            try { localStorage.setItem(FOREST_SAVE_KEY, JSON.stringify(data)); } catch(e) {}
+        }
+
+        function loadForestState() {
+            try {
+                const raw = localStorage.getItem(FOREST_SAVE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch(e) { return null; }
+        }
+
+        function clearForestSave() {
+            try { localStorage.removeItem(FOREST_SAVE_KEY); } catch(e) {}
+        }
+
+        function showContinueScreen(savedData) {
+            document.getElementById('storyText').innerHTML = `
+                <p><span class="highlight">Welcome back, adventurer.</span></p>
+                <p>You have a saved game from Day ${savedData.day} (${timeNames[savedData.timeOfDay]}).</p>
+                <p>You had ${savedData.inventory.length} item${savedData.inventory.length !== 1 ? 's' : ''} and ${savedData.skills.length} skill${savedData.skills.length !== 1 ? 's' : ''}.</p>`;
+            document.getElementById('choicesSection').innerHTML = `
+                <button class="choice-btn" onclick="resumeSavedGame()">
+                    <span class="choice-icon">📖</span>
+                    <div class="choice-text">Continue Adventure</div>
+                </button>
+                <button class="choice-btn" onclick="startNewGame()">
+                    <span class="choice-icon">🌲</span>
+                    <div class="choice-text">New Game</div>
+                </button>`;
+        }
+
+        function resumeSavedGame() {
+            const saved = loadForestState();
+            if (!saved) { startNewGame(); return; }
+            Object.assign(game, saved);
+            updateUI();
+            renderScene(game.scene);
+        }
+
+        function startNewGame() {
+            clearForestSave();
+            game.day = 1; game.timeOfDay = 0; game.weather = 'clear';
+            game.health = 100; game.hunger = 80; game.thirst = 80;
+            game.warmth = 70; game.energy = 90; game.morale = 75;
+            game.inventory = []; game.skills = [];
+            game.hasShelter = false; game.hasFire = false;
+            game.scene = 'intro'; game.actionsToday = 0; game.totalDays = 1;
+            updateUI();
+            renderScene('intro');
+        }
+
+        // Patch makeChoice to auto-save
+        const _originalMakeChoice = makeChoice;
+        makeChoice = function(nextScene) {
+            _originalMakeChoice(nextScene);
+            if (nextScene !== 'victory') saveForestState();
+            else clearForestSave();
+        };
+
         // ========== INITIALIZATION ==========
         createTrees();
         createStars();
         createFireflies();
         createRain();
         updateUI();
-        renderScene('intro');
+
+        const savedForest = loadForestState();
+        if (savedForest && savedForest.scene !== 'intro') {
+            showContinueScreen(savedForest);
+        } else {
+            renderScene('intro');
+        }
     </script>
 </body>
 </html>

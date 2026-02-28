@@ -767,6 +767,46 @@
         }
 
         /* Error message */
+        /* Back Button + Branding */
+        .kaayaka-back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .kaayaka-back-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .kaayaka-branding {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+        }
+        .kaayaka-branding a {
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .kaayaka-branding a:hover { color: rgba(255,255,255,0.6); }
+
         .error-message {
             background: rgba(255, 107, 107, 0.1);
             border: 1px solid rgba(255, 107, 107, 0.3);
@@ -778,6 +818,8 @@
     </style>
 </head>
 <body>
+    <a href="index.html" class="kaayaka-back-btn">← Games</a>
+    <div class="kaayaka-branding"><a href="https://kaayaka.in">Kaayaka Games</a></div>
     <div class="app">
         <header class="header">
             <h1><span class="icon">🧩</span> Sudoku Instructor</h1>
@@ -1195,6 +1237,264 @@
             return null;
         }
 
+        // ========== ADVANCED TECHNIQUES ==========
+        function findNakedPairs(grid, candidates) {
+            // Check each unit (row, col, box) for two cells with identical 2-candidate sets
+            const units = [];
+
+            // Rows
+            for (let r = 0; r < 9; r++) {
+                const cells = [];
+                for (let c = 0; c < 9; c++) if (grid[r][c] === 0) cells.push({ r, c });
+                units.push({ type: 'Row', name: `Row ${getRowName(r)}`, cells });
+            }
+            // Columns
+            for (let c = 0; c < 9; c++) {
+                const cells = [];
+                for (let r = 0; r < 9; r++) if (grid[r][c] === 0) cells.push({ r, c });
+                units.push({ type: 'Column', name: `Column ${getColName(c)}`, cells });
+            }
+            // Boxes
+            for (let br = 0; br < 3; br++) {
+                for (let bc = 0; bc < 3; bc++) {
+                    const cells = [];
+                    for (let r = br * 3; r < br * 3 + 3; r++)
+                        for (let c = bc * 3; c < bc * 3 + 3; c++)
+                            if (grid[r][c] === 0) cells.push({ r, c });
+                    units.push({ type: 'Box', name: getBoxName(br * 3, bc * 3), cells });
+                }
+            }
+
+            for (const unit of units) {
+                const pairCells = unit.cells.filter(({ r, c }) => candidates[r][c].length === 2);
+                for (let i = 0; i < pairCells.length; i++) {
+                    for (let j = i + 1; j < pairCells.length; j++) {
+                        const a = pairCells[i], b = pairCells[j];
+                        const ca = candidates[a.r][a.c], cb = candidates[b.r][b.c];
+                        if (ca.length === 2 && ca[0] === cb[0] && ca[1] === cb[1]) {
+                            // Found a naked pair — check if it eliminates anything
+                            const [n1, n2] = ca;
+                            let eliminated = false;
+                            for (const cell of unit.cells) {
+                                if ((cell.r === a.r && cell.c === a.c) || (cell.r === b.r && cell.c === b.c)) continue;
+                                const cc = candidates[cell.r][cell.c];
+                                if (cc.includes(n1) || cc.includes(n2)) {
+                                    eliminated = true;
+                                    break;
+                                }
+                            }
+                            if (!eliminated) continue;
+
+                            // Apply eliminations to candidates and check if any cell becomes a naked single
+                            const elimDetails = [];
+                            for (const cell of unit.cells) {
+                                if ((cell.r === a.r && cell.c === a.c) || (cell.r === b.r && cell.c === b.c)) continue;
+                                const cc = candidates[cell.r][cell.c];
+                                const removed = [];
+                                if (cc.includes(n1)) removed.push(n1);
+                                if (cc.includes(n2)) removed.push(n2);
+                                if (removed.length > 0) {
+                                    elimDetails.push({ r: cell.r, c: cell.c, removed });
+                                    candidates[cell.r][cell.c] = cc.filter(x => x !== n1 && x !== n2);
+                                }
+                            }
+
+                            // After elimination, find any cell that became a naked single
+                            for (const cell of unit.cells) {
+                                if (candidates[cell.r][cell.c].length === 1 && grid[cell.r][cell.c] === 0) {
+                                    const val = candidates[cell.r][cell.c][0];
+                                    let elimHtml = `<div class="elimination-list"><div class="title">🔍 Naked Pair {${n1}, ${n2}} in ${unit.name}:</div>`;
+                                    elimHtml += `<div class="elimination-item"><span class="num" style="text-decoration:none;background:rgba(74,222,128,0.2);color:#4ade80">${n1},${n2}</span><span class="reason">Pair in <span class="loc">${getCellName(a.r, a.c)}</span> and <span class="loc">${getCellName(b.r, b.c)}</span></span></div>`;
+                                    elimDetails.forEach(ed => {
+                                        ed.removed.forEach(num => {
+                                            elimHtml += `<div class="elimination-item"><span class="num">${num}</span><span class="reason">Eliminated from <span class="loc">${getCellName(ed.r, ed.c)}</span></span></div>`;
+                                        });
+                                    });
+                                    elimHtml += '</div>';
+
+                                    return {
+                                        technique: 'Naked Pairs', row: cell.r, col: cell.c, value: val,
+                                        explanation: `<p>Found naked pair {<span class="value">${n1}</span>, <span class="value">${n2}</span>} in <span class="cell-ref">${getCellName(a.r, a.c)}</span> and <span class="cell-ref">${getCellName(b.r, b.c)}</span> within ${unit.name}.</p>
+                                            ${elimHtml}
+                                            <div class="conclusion">✅ Cell <span class="cell-ref">${getCellName(cell.r, cell.c)}</span> must be <span class="value">${val}</span>!</div>`
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findPointingPairs(grid, candidates) {
+            // For each box and number, if the candidate is confined to one row/col, eliminate from rest of that row/col
+            for (let br = 0; br < 3; br++) {
+                for (let bc = 0; bc < 3; bc++) {
+                    const startR = br * 3, startC = bc * 3;
+                    for (let num = 1; num <= 9; num++) {
+                        const pos = [];
+                        for (let r = startR; r < startR + 3; r++)
+                            for (let c = startC; c < startC + 3; c++)
+                                if (candidates[r][c].includes(num)) pos.push({ r, c });
+
+                        if (pos.length < 2 || pos.length > 3) continue;
+
+                        // Check if all in same row
+                        const allSameRow = pos.every(p => p.r === pos[0].r);
+                        // Check if all in same col
+                        const allSameCol = pos.every(p => p.c === pos[0].c);
+
+                        if (allSameRow) {
+                            const row = pos[0].r;
+                            let eliminated = false;
+                            for (let c = 0; c < 9; c++) {
+                                if (c >= startC && c < startC + 3) continue;
+                                if (candidates[row][c].includes(num)) {
+                                    candidates[row][c] = candidates[row][c].filter(x => x !== num);
+                                    eliminated = true;
+                                }
+                            }
+                            if (!eliminated) continue;
+
+                            // Check if elimination created a naked single
+                            for (let c = 0; c < 9; c++) {
+                                if (candidates[row][c].length === 1 && grid[row][c] === 0) {
+                                    const val = candidates[row][c][0];
+                                    const posStr = pos.map(p => getCellName(p.r, p.c)).join(', ');
+                                    return {
+                                        technique: 'Pointing Pairs', row, col: c, value: val,
+                                        explanation: `<p><span class="value">${num}</span> in ${getBoxName(startR, startC)} is confined to Row ${getRowName(row)} (cells ${posStr}).</p>
+                                            <div class="elimination-list"><div class="title">🔍 Pointing Pair eliminates ${num} from rest of Row ${getRowName(row)}:</div>
+                                            <div class="elimination-item"><span class="num">${num}</span><span class="reason">Eliminated from Row ${getRowName(row)} outside ${getBoxName(startR, startC)}</span></div></div>
+                                            <div class="conclusion">✅ Cell <span class="cell-ref">${getCellName(row, c)}</span> must be <span class="value">${val}</span>!</div>`
+                                    };
+                                }
+                            }
+                        }
+
+                        if (allSameCol) {
+                            const col = pos[0].c;
+                            let eliminated = false;
+                            for (let r = 0; r < 9; r++) {
+                                if (r >= startR && r < startR + 3) continue;
+                                if (candidates[r][col].includes(num)) {
+                                    candidates[r][col] = candidates[r][col].filter(x => x !== num);
+                                    eliminated = true;
+                                }
+                            }
+                            if (!eliminated) continue;
+
+                            for (let r = 0; r < 9; r++) {
+                                if (candidates[r][col].length === 1 && grid[r][col] === 0) {
+                                    const val = candidates[r][col][0];
+                                    const posStr = pos.map(p => getCellName(p.r, p.c)).join(', ');
+                                    return {
+                                        technique: 'Pointing Pairs', row: r, col, value: val,
+                                        explanation: `<p><span class="value">${num}</span> in ${getBoxName(startR, startC)} is confined to Column ${getColName(col)} (cells ${posStr}).</p>
+                                            <div class="elimination-list"><div class="title">🔍 Pointing Pair eliminates ${num} from rest of Column ${getColName(col)}:</div>
+                                            <div class="elimination-item"><span class="num">${num}</span><span class="reason">Eliminated from Column ${getColName(col)} outside ${getBoxName(startR, startC)}</span></div></div>
+                                            <div class="conclusion">✅ Cell <span class="cell-ref">${getCellName(r, col)}</span> must be <span class="value">${val}</span>!</div>`
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findBoxLineReduction(grid, candidates) {
+            // For each row and number, if confined to one box, eliminate from rest of box
+            for (let r = 0; r < 9; r++) {
+                for (let num = 1; num <= 9; num++) {
+                    const pos = [];
+                    for (let c = 0; c < 9; c++)
+                        if (candidates[r][c].includes(num)) pos.push({ r, c });
+
+                    if (pos.length < 2 || pos.length > 3) continue;
+
+                    const boxC = Math.floor(pos[0].c / 3);
+                    if (!pos.every(p => Math.floor(p.c / 3) === boxC)) continue;
+
+                    const startR = Math.floor(r / 3) * 3, startC = boxC * 3;
+                    let eliminated = false;
+                    for (let br = startR; br < startR + 3; br++) {
+                        if (br === r) continue;
+                        for (let bc = startC; bc < startC + 3; bc++) {
+                            if (candidates[br][bc].includes(num)) {
+                                candidates[br][bc] = candidates[br][bc].filter(x => x !== num);
+                                eliminated = true;
+                            }
+                        }
+                    }
+                    if (!eliminated) continue;
+
+                    for (let br = startR; br < startR + 3; br++) {
+                        for (let bc = startC; bc < startC + 3; bc++) {
+                            if (candidates[br][bc].length === 1 && grid[br][bc] === 0) {
+                                const val = candidates[br][bc][0];
+                                const posStr = pos.map(p => getCellName(p.r, p.c)).join(', ');
+                                return {
+                                    technique: 'Box/Line Reduction', row: br, col: bc, value: val,
+                                    explanation: `<p><span class="value">${num}</span> in Row ${getRowName(r)} is confined to ${getBoxName(startR, startC)} (cells ${posStr}).</p>
+                                        <div class="elimination-list"><div class="title">🔍 Box/Line Reduction eliminates ${num} from rest of ${getBoxName(startR, startC)}:</div>
+                                        <div class="elimination-item"><span class="num">${num}</span><span class="reason">Eliminated from ${getBoxName(startR, startC)} outside Row ${getRowName(r)}</span></div></div>
+                                        <div class="conclusion">✅ Cell <span class="cell-ref">${getCellName(br, bc)}</span> must be <span class="value">${val}</span>!</div>`
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+
+            // For each column and number, if confined to one box, eliminate from rest of box
+            for (let c = 0; c < 9; c++) {
+                for (let num = 1; num <= 9; num++) {
+                    const pos = [];
+                    for (let r = 0; r < 9; r++)
+                        if (candidates[r][c].includes(num)) pos.push({ r, c });
+
+                    if (pos.length < 2 || pos.length > 3) continue;
+
+                    const boxR = Math.floor(pos[0].r / 3);
+                    if (!pos.every(p => Math.floor(p.r / 3) === boxR)) continue;
+
+                    const startR = boxR * 3, startC = Math.floor(c / 3) * 3;
+                    let eliminated = false;
+                    for (let br = startR; br < startR + 3; br++) {
+                        for (let bc = startC; bc < startC + 3; bc++) {
+                            if (bc === c) continue;
+                            if (candidates[br][bc].includes(num)) {
+                                candidates[br][bc] = candidates[br][bc].filter(x => x !== num);
+                                eliminated = true;
+                            }
+                        }
+                    }
+                    if (!eliminated) continue;
+
+                    for (let br = startR; br < startR + 3; br++) {
+                        for (let bc = startC; bc < startC + 3; bc++) {
+                            if (candidates[br][bc].length === 1 && grid[br][bc] === 0) {
+                                const val = candidates[br][bc][0];
+                                const posStr = pos.map(p => getCellName(p.r, p.c)).join(', ');
+                                return {
+                                    technique: 'Box/Line Reduction', row: br, col: bc, value: val,
+                                    explanation: `<p><span class="value">${num}</span> in Column ${getColName(c)} is confined to ${getBoxName(startR, startC)} (cells ${posStr}).</p>
+                                        <div class="elimination-list"><div class="title">🔍 Box/Line Reduction eliminates ${num} from rest of ${getBoxName(startR, startC)}:</div>
+                                        <div class="elimination-item"><span class="num">${num}</span><span class="reason">Eliminated from ${getBoxName(startR, startC)} outside Column ${getColName(c)}</span></div></div>
+                                        <div class="conclusion">✅ Cell <span class="cell-ref">${getCellName(br, bc)}</span> must be <span class="value">${val}</span>!</div>`
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
         function solveWithExplanations(initialGrid) {
             const workingGrid = deepCopy(initialGrid);
             const solutionSteps = [];
@@ -1210,7 +1510,11 @@
                         if (workingGrid[r][c] === 0) complete = false;
                 if (complete) break;
 
-                let move = findNakedSingle(workingGrid, candidates) || findHiddenSingle(workingGrid, candidates);
+                let move = findNakedSingle(workingGrid, candidates)
+                    || findHiddenSingle(workingGrid, candidates)
+                    || findNakedPairs(workingGrid, candidates)
+                    || findPointingPairs(workingGrid, candidates)
+                    || findBoxLineReduction(workingGrid, candidates);
                 if (move) {
                     stepNum++;
                     workingGrid[move.row][move.col] = move.value;
@@ -1265,7 +1569,7 @@
 
             const container = document.getElementById('stepsContainer');
             if (steps.length === 0) {
-                container.innerHTML = `<div class="error-message">Cannot solve with basic techniques. Try an easier puzzle.</div>`;
+                container.innerHTML = `<div class="error-message">Cannot solve with available techniques (Naked/Hidden Singles, Naked Pairs, Pointing Pairs, Box/Line Reduction). Try an easier puzzle.</div>`;
                 return;
             }
 
@@ -1401,7 +1705,58 @@
             if (e.key === 'Escape') closeErrorPopup();
         });
 
+        // ========== STATE PERSISTENCE ==========
+        const SUDOKU_SAVE_KEY = 'kaayaka_sudoku_v1';
+        let sudokuSaveTimeout = null;
+
+        function saveSudokuState() {
+            clearTimeout(sudokuSaveTimeout);
+            sudokuSaveTimeout = setTimeout(() => {
+                try {
+                    localStorage.setItem(SUDOKU_SAVE_KEY, JSON.stringify({
+                        grid: grid,
+                        givenCells: [...givenCells],
+                        currentStep: currentStep
+                    }));
+                } catch(e) {}
+            }, 500);
+        }
+
+        function loadSudokuState() {
+            try {
+                const raw = localStorage.getItem(SUDOKU_SAVE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch(e) { return null; }
+        }
+
+        function clearSudokuSave() {
+            try { localStorage.removeItem(SUDOKU_SAVE_KEY); } catch(e) {}
+        }
+
+        // Patch updateGridFromInput to auto-save
+        const _origUpdateGrid = updateGridFromInput;
+        updateGridFromInput = function() {
+            _origUpdateGrid();
+            saveSudokuState();
+        };
+
+        // Patch clearGrid to clear save
+        const _origClearGrid = clearGrid;
+        clearGrid = function() {
+            clearSudokuSave();
+            _origClearGrid();
+        };
+
         initGrid();
+
+        // Restore saved state
+        const savedSudoku = loadSudokuState();
+        if (savedSudoku && savedSudoku.grid) {
+            grid = savedSudoku.grid;
+            givenCells = new Set(savedSudoku.givenCells || []);
+            renderGrid();
+        }
     </script>
 </body>
 </html>

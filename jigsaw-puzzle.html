@@ -373,6 +373,7 @@
             border: 2px solid transparent;
             border-radius: 4px;
             flex-shrink: 0;
+            touch-action: none;
         }
 
         .puzzle-piece:hover {
@@ -513,6 +514,46 @@
         .pattern-rainbow { background: linear-gradient(180deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #8b5cf6); }
         .pattern-abstract { background: conic-gradient(#ec4899, #8b5cf6, #3b82f6, #22c55e, #ec4899); }
 
+        /* Back Button + Branding */
+        .kaayaka-back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .kaayaka-back-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .kaayaka-branding {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+        }
+        .kaayaka-branding a {
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .kaayaka-branding a:hover { color: rgba(255,255,255,0.6); }
+
         /* Horizontal Scrollbar */
         .pieces-scroll::-webkit-scrollbar { height: 6px; }
         .pieces-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
@@ -521,6 +562,8 @@
     </style>
 </head>
 <body>
+    <a href="index.html" class="kaayaka-back-btn">← Games</a>
+    <div class="kaayaka-branding"><a href="https://kaayaka.in">Kaayaka Games</a></div>
     <!-- SETUP SCREEN -->
     <div class="setup-screen" id="setupScreen">
         <div class="setup-container">
@@ -1009,6 +1052,7 @@
                 el.addEventListener('dragstart', onDragStart);
                 el.addEventListener('dragend', onDragEnd);
                 el.addEventListener('click', onPieceClick);
+                el.addEventListener('pointerdown', onPointerDown);
                 tray.appendChild(el);
             });
 
@@ -1070,6 +1114,87 @@
             if (!slot) return;
             slot.classList.remove('highlight');
             placePiece(parseInt(e.dataTransfer.getData('piece')), parseInt(slot.dataset.slot));
+        }
+
+        // ========== POINTER (TOUCH) DRAG ==========
+        let pointerDragId = null;
+        let pointerGhost = null;
+        let pointerStartedDrag = false;
+
+        function onPointerDown(e) {
+            if (e.pointerType === 'mouse') return; // mouse uses HTML5 drag API
+            const el = e.target.closest('.puzzle-piece');
+            if (!el) return;
+            e.preventDefault();
+
+            pointerDragId = parseInt(el.dataset.piece);
+            pointerStartedDrag = false;
+
+            const piece = state.pieces.find(p => p.id === pointerDragId);
+            if (!piece) return;
+
+            pointerGhost = document.createElement('div');
+            pointerGhost.className = 'drag-ghost';
+            const gc = piece.canvas.cloneNode();
+            gc.getContext('2d').drawImage(piece.canvas, 0, 0);
+            pointerGhost.appendChild(gc);
+            document.body.appendChild(pointerGhost);
+            pointerGhost.style.left = e.clientX + 'px';
+            pointerGhost.style.top = e.clientY + 'px';
+
+            el.classList.add('dragging');
+            el.setPointerCapture(e.pointerId);
+
+            el.addEventListener('pointermove', onPointerMove);
+            el.addEventListener('pointerup', onPointerUp);
+            el.addEventListener('pointercancel', onPointerUp);
+        }
+
+        function onPointerMove(e) {
+            if (pointerGhost) {
+                pointerStartedDrag = true;
+                pointerGhost.style.left = e.clientX + 'px';
+                pointerGhost.style.top = e.clientY + 'px';
+
+                // Highlight slot under pointer
+                document.querySelectorAll('.puzzle-slot').forEach(s => s.classList.remove('highlight'));
+                const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+                if (elemBelow) {
+                    const slot = elemBelow.closest('.puzzle-slot');
+                    if (slot && !slot.classList.contains('filled')) slot.classList.add('highlight');
+                }
+            }
+        }
+
+        function onPointerUp(e) {
+            const el = e.target.closest('.puzzle-piece');
+            if (el) {
+                el.classList.remove('dragging');
+                el.removeEventListener('pointermove', onPointerMove);
+                el.removeEventListener('pointerup', onPointerUp);
+                el.removeEventListener('pointercancel', onPointerUp);
+            }
+
+            if (pointerGhost) {
+                pointerGhost.remove();
+                pointerGhost = null;
+            }
+
+            document.querySelectorAll('.puzzle-slot').forEach(s => s.classList.remove('highlight'));
+
+            if (pointerDragId !== null && pointerStartedDrag) {
+                // Find which slot is under the pointer
+                const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+                if (elemBelow) {
+                    const slot = elemBelow.closest('.puzzle-slot');
+                    if (slot) {
+                        placePiece(pointerDragId, parseInt(slot.dataset.slot));
+                    }
+                }
+            }
+
+            pointerDragId = null;
+            pointerStartedDrag = false;
         }
 
         // ========== CLICK ==========
@@ -1206,6 +1331,134 @@
             document.getElementById('gameScreen').classList.remove('active');
             document.getElementById('winOverlay').classList.remove('show');
         }
+
+        // ========== STATE PERSISTENCE ==========
+        const JIGSAW_SAVE_KEY = 'kaayaka_jigsaw_v1';
+
+        function saveJigsawState() {
+            if (!state.pattern || state.placed.size === 0) return; // Only save built-in patterns with progress
+            try {
+                localStorage.setItem(JIGSAW_SAVE_KEY, JSON.stringify({
+                    difficulty: state.difficulty,
+                    pattern: state.pattern,
+                    timer: state.timer,
+                    hints: state.hints,
+                    placed: [...state.placed]
+                }));
+            } catch(e) {}
+        }
+
+        function loadJigsawState() {
+            try {
+                const raw = localStorage.getItem(JIGSAW_SAVE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch(e) { return null; }
+        }
+
+        function clearJigsawSave() {
+            try { localStorage.removeItem(JIGSAW_SAVE_KEY); } catch(e) {}
+        }
+
+        // Patch placePiece to auto-save
+        const _origPlacePiece = placePiece;
+        placePiece = function(pieceId, slotId) {
+            _origPlacePiece(pieceId, slotId);
+            if (state.placed.has(pieceId)) saveJigsawState();
+        };
+
+        // Patch win to clear save
+        const _origWin = win;
+        win = function() {
+            clearJigsawSave();
+            _origWin();
+        };
+
+        // Patch resetGame to clear save
+        const _origReset = resetGame;
+        resetGame = function() {
+            clearJigsawSave();
+            _origReset();
+            showResumeOption();
+        };
+
+        function showResumeOption() {
+            const saved = loadJigsawState();
+            if (!saved) return;
+
+            const setupContainer = document.querySelector('.setup-container');
+            // Remove existing resume card if any
+            document.getElementById('resumeCard')?.remove();
+
+            const card = document.createElement('div');
+            card.id = 'resumeCard';
+            card.className = 'setup-card';
+            card.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+            card.innerHTML = `
+                <h2>Saved Puzzle</h2>
+                <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:12px;">
+                    Pattern: ${saved.pattern} | ${saved.placed.length} pieces placed | ${formatTime(saved.timer)}
+                </p>
+                <button class="start-btn" style="background:linear-gradient(135deg,#22c55e,#16a34a);margin-bottom:8px" onclick="resumePuzzle()">Resume Puzzle</button>
+                <button class="start-btn" style="background:rgba(255,255,255,0.1);font-size:0.85rem" onclick="clearJigsawSave();document.getElementById('resumeCard')?.remove();">Discard Save</button>
+            `;
+            setupContainer.insertBefore(card, setupContainer.querySelector('.setup-card'));
+        }
+
+        function resumePuzzle() {
+            const saved = loadJigsawState();
+            if (!saved) return;
+
+            state.pattern = saved.pattern;
+            state.image = null;
+            state.difficulty = saved.difficulty;
+            state.timer = saved.timer;
+            state.hints = saved.hints;
+
+            // Select the saved pattern visually
+            document.querySelectorAll('.pattern-btn').forEach(b => {
+                b.classList.toggle('selected', b.dataset.pattern === saved.pattern);
+            });
+            document.querySelectorAll('.diff-btn').forEach(b => {
+                b.classList.toggle('selected', parseInt(b.dataset.level) === saved.difficulty);
+            });
+
+            // Start game normally, then restore placed pieces
+            const savedPlacedIds = new Set(saved.placed);
+
+            const origFinalize = finalize;
+            finalize = function(canvas) {
+                origFinalize(canvas);
+                finalize = origFinalize; // Restore original
+
+                // Now auto-place saved pieces
+                savedPlacedIds.forEach(pieceId => {
+                    const piece = state.pieces.find(p => p.id === pieceId);
+                    if (!piece) return;
+                    const slotId = piece.row * state.gridSize + piece.col;
+                    state.placed.add(pieceId);
+
+                    const slot = document.querySelector(`[data-slot="${slotId}"]`);
+                    if (slot) {
+                        slot.classList.add('filled');
+                        const placed = piece.canvas.cloneNode();
+                        placed.getContext('2d').drawImage(piece.canvas, 0, 0);
+                        placed.style.cssText = `width:${state.baseSize + state.tabSize * 2}px;height:${state.baseSize + state.tabSize * 2}px;left:${-state.tabSize}px;top:${-state.tabSize}px`;
+                        slot.appendChild(placed);
+                        slot.querySelector('.slot-outline')?.classList.add('filled');
+                    }
+                });
+
+                // Re-render tray without placed pieces
+                renderTray();
+                updateUI();
+            };
+
+            startGame();
+        }
+
+        // Show resume option on initial load
+        showResumeOption();
 
         // ========== TOAST ==========
         function toast(msg, type = '') {
