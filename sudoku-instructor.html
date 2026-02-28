@@ -78,7 +78,7 @@
         /* Main layout */
         .main {
             display: grid;
-            grid-template-columns: auto 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 25px;
             flex: 1;
             min-height: 0;
@@ -127,7 +127,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(18px, calc(var(--cell-size, 56px) * 0.45), 32px);
+            font-size: clamp(18px, calc(var(--cell-size, 56px) * 0.45), 36px);
             font-weight: 600;
             background: rgba(30, 30, 60, 0.8);
             color: #fff;
@@ -1750,14 +1750,14 @@
         };
 
         function sizeSudokuGrid() {
-            const gridCard = document.querySelector('.grid-card');
-            if (!gridCard) return;
-            const cardW = gridCard.getBoundingClientRect().width - 44; // padding
+            const gridPanel = document.querySelector('.grid-panel');
+            if (!gridPanel) return;
+            const panelW = gridPanel.getBoundingClientRect().width - 44;
             const vh = window.innerHeight;
-            // Height budget: vh minus header(~60) minus controls(~120) minus padding(~40)
-            const cardH = vh - 220;
-            const available = Math.min(cardW, cardH);
-            const cellSize = Math.max(40, Math.min(72, Math.floor(available / 9.2)));
+            // Height budget: vh minus header(~80) minus controls(~160) minus padding(~40)
+            const availH = vh - 280;
+            const available = Math.min(panelW, availH);
+            const cellSize = Math.max(44, Math.min(80, Math.floor(available / 9.2)));
             document.querySelector('.sudoku-grid').style.setProperty('--cell-size', cellSize + 'px');
         }
 
