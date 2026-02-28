@@ -127,7 +127,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(16px, calc(var(--cell-size, 56px) * 0.45), 28px);
+            font-size: clamp(18px, calc(var(--cell-size, 56px) * 0.45), 32px);
             font-weight: 600;
             background: rgba(30, 30, 60, 0.8);
             color: #fff;
@@ -1754,10 +1754,10 @@
             if (!gridCard) return;
             const cardW = gridCard.getBoundingClientRect().width - 44; // padding
             const vh = window.innerHeight;
-            // Height budget: vh minus header(~70) minus controls(~200) minus padding(~60)
-            const cardH = vh - 330;
+            // Height budget: vh minus header(~60) minus controls(~120) minus padding(~40)
+            const cardH = vh - 220;
             const available = Math.min(cardW, cardH);
-            const cellSize = Math.max(36, Math.min(64, Math.floor(available / 9.2)));
+            const cellSize = Math.max(40, Math.min(72, Math.floor(available / 9.2)));
             document.querySelector('.sudoku-grid').style.setProperty('--cell-size', cellSize + 'px');
         }
 

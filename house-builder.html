@@ -74,8 +74,8 @@
             bottom: 150px;
             left: 50%;
             transform: translateX(-50%);
-            width: min(50vw, 500px);
-            height: min(65vh, 600px);
+            width: min(55vw, 600px);
+            height: min(70vh, 650px);
             border: 3px dashed rgba(255,255,255,0.5);
             border-bottom: none;
         }
@@ -85,7 +85,7 @@
             bottom: 150px;
             left: 50%;
             transform: translateX(-50%);
-            width: min(45vw, 450px);
+            width: min(50vw, 550px);
             height: 30px;
             background: #808080;
             border: 3px solid #404040;
@@ -113,16 +113,16 @@
         }
 
         .wall {
-            width: min(120px, 10vw);
-            height: min(140px, 13vw);
+            width: min(140px, 12vw);
+            height: min(160px, 14vw);
             background: linear-gradient(135deg, #DEB887 25%, #D2691E 25%, #D2691E 50%, #DEB887 50%, #DEB887 75%, #D2691E 75%);
             background-size: 20px 20px;
             border: 3px solid #8B4513;
         }
 
         .wall-window {
-            width: min(120px, 10vw);
-            height: min(140px, 13vw);
+            width: min(140px, 12vw);
+            height: min(160px, 14vw);
             background: linear-gradient(135deg, #DEB887 25%, #D2691E 25%, #D2691E 50%, #DEB887 50%, #DEB887 75%, #D2691E 75%);
             background-size: 20px 20px;
             border: 3px solid #8B4513;
@@ -160,8 +160,8 @@
         }
 
         .door-wall {
-            width: min(120px, 10vw);
-            height: min(140px, 13vw);
+            width: min(140px, 12vw);
+            height: min(160px, 14vw);
             background: linear-gradient(135deg, #DEB887 25%, #D2691E 25%, #D2691E 50%, #DEB887 50%, #DEB887 75%, #D2691E 75%);
             background-size: 20px 20px;
             border: 3px solid #8B4513;
@@ -193,25 +193,25 @@
         .roof {
             width: 0;
             height: 0;
-            border-left: min(240px, 20vw) solid transparent;
-            border-right: min(240px, 20vw) solid transparent;
-            border-bottom: min(140px, 12vw) solid #8B0000;
+            border-left: min(280px, 22vw) solid transparent;
+            border-right: min(280px, 22vw) solid transparent;
+            border-bottom: min(160px, 13vw) solid #8B0000;
             position: relative;
         }
 
         .roof::after {
             content: '';
             position: absolute;
-            top: min(140px, 12vw);
-            left: min(-240px, -20vw);
-            width: min(480px, 40vw);
+            top: min(160px, 13vw);
+            left: min(-280px, -22vw);
+            width: min(560px, 44vw);
             height: 15px;
             background: #654321;
         }
 
         .chimney {
-            width: min(50px, 4vw);
-            height: min(70px, 6vw);
+            width: min(55px, 5vw);
+            height: min(80px, 7vw);
             background: linear-gradient(90deg, #DC143C 0%, #8B0000 100%);
             border: 3px solid #4a0000;
         }
@@ -381,7 +381,7 @@
         }
 
         .mini-piece {
-            transform: scale(0.4);
+            transform: scale(0.6);
             transform-origin: center;
         }
 
