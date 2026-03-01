@@ -960,6 +960,7 @@
                         }
                     }
                     updateGridFromInput();
+                    checkCompletion();
                 });
 
                 input.addEventListener('keydown', (e) => {
@@ -1499,28 +1500,33 @@
         function solveWithExplanations(initialGrid) {
             const workingGrid = deepCopy(initialGrid);
             const solutionSteps = [];
-            let stepNum = 0, changed = true;
+            let stepNum = 0;
+            let maxIter = 500;
 
-            while (changed) {
-                changed = false;
-                const candidates = getAllCandidates(workingGrid);
-
+            while (maxIter-- > 0) {
                 let complete = true;
                 for (let r = 0; r < 9; r++)
                     for (let c = 0; c < 9; c++)
                         if (workingGrid[r][c] === 0) complete = false;
                 if (complete) break;
 
+                // Try placement techniques with fresh candidates
+                let candidates = getAllCandidates(workingGrid);
                 let move = findNakedSingle(workingGrid, candidates)
-                    || findHiddenSingle(workingGrid, candidates)
-                    || findNakedPairs(workingGrid, candidates)
-                    || findPointingPairs(workingGrid, candidates)
-                    || findBoxLineReduction(workingGrid, candidates);
+                    || findHiddenSingle(workingGrid, candidates);
+
+                // Elimination techniques each get their own fresh candidates
+                // so one technique's modifications don't corrupt the next
+                if (!move) move = findNakedPairs(workingGrid, getAllCandidates(workingGrid));
+                if (!move) move = findPointingPairs(workingGrid, getAllCandidates(workingGrid));
+                if (!move) move = findBoxLineReduction(workingGrid, getAllCandidates(workingGrid));
+
                 if (move) {
                     stepNum++;
                     workingGrid[move.row][move.col] = move.value;
                     solutionSteps.push({ stepNum, ...move });
-                    changed = true;
+                } else {
+                    break;
                 }
             }
 
@@ -1691,6 +1697,35 @@
 
         function showError(msg) {
             document.getElementById('stepsContainer').innerHTML = `<div class="error-message">⚠️ ${msg}</div>`;
+        }
+
+        function checkCompletion() {
+            for (let r = 0; r < 9; r++)
+                for (let c = 0; c < 9; c++)
+                    if (grid[r][c] === 0) return;
+            // All cells filled — validate
+            for (let r = 0; r < 9; r++) {
+                const row = new Set();
+                for (let c = 0; c < 9; c++) row.add(grid[r][c]);
+                if (row.size !== 9) return;
+            }
+            for (let c = 0; c < 9; c++) {
+                const col = new Set();
+                for (let r = 0; r < 9; r++) col.add(grid[r][c]);
+                if (col.size !== 9) return;
+            }
+            for (let br = 0; br < 3; br++) {
+                for (let bc = 0; bc < 3; bc++) {
+                    const box = new Set();
+                    for (let r = br*3; r < br*3+3; r++)
+                        for (let c = bc*3; c < bc*3+3; c++) box.add(grid[r][c]);
+                    if (box.size !== 9) return;
+                }
+            }
+            // Valid solution!
+            const container = document.getElementById('stepsContainer');
+            container.innerHTML = `<div class="summary" style="display:block"><h3>🎉 Puzzle Solved!</h3><p style="color:rgba(255,255,255,0.6);margin-top:8px;">All rows, columns and boxes are valid. Well done!</p></div>`;
+            document.querySelectorAll('.cell').forEach(c => { c.classList.add('solved'); c.style.animation = 'popIn 0.3s ease'; });
         }
 
         document.getElementById('speedSlider').addEventListener('input', (e) => {

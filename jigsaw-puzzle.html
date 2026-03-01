@@ -887,14 +887,14 @@
             state.gridSize = grid;
             state.baseSize = base;
             state.tabSize = tab;
-            state.totalPieces = s.grid * s.grid;
+            state.totalPieces = grid * grid;
             state.pieces = [];
             state.placed = new Set();
             state.selected = null;
             state.timer = 0;
             state.hints = 0;
             state.paused = false;
-            state.shapes = generateShapes(s.grid);
+            state.shapes = generateShapes(grid);
 
             document.getElementById('setupScreen').style.display = 'none';
             document.getElementById('gameScreen').classList.add('active');
