@@ -73,7 +73,7 @@
         .upload-area {
             border: 2px dashed rgba(255,255,255,0.2);
             border-radius: 12px;
-            padding: 15px;
+            padding: 10px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
@@ -90,9 +90,9 @@
 
         .preview-image {
             max-width: 100%;
-            max-height: 120px;
+            max-height: 90px;
             border-radius: 8px;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .divider {
@@ -105,7 +105,7 @@
         .pattern-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 12px;
+            gap: 8px;
         }
 
         .pattern-btn {
@@ -250,44 +250,45 @@
         .game-main {
             flex: 1;
             display: flex;
-            gap: 15px;
             min-height: 0;
         }
 
-        /* Left Panel - Reference */
-        .left-panel {
-            width: 220px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        /* Floating Reference Overlay */
+        .ref-overlay {
+            position: fixed;
+            top: 60px;
+            left: 15px;
+            z-index: 100;
+            cursor: pointer;
+            transition: all 0.25s ease;
         }
 
-        .panel {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 10px;
-            padding: 10px;
-        }
-
-        .panel-title {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: rgba(255,255,255,0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .reference-img {
-            width: 100%;
-            border-radius: 6px;
+        .ref-overlay .ref-thumb {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid rgba(168, 85, 247, 0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             display: block;
+            transition: all 0.25s ease;
+        }
+
+        .ref-overlay.expanded .ref-thumb {
+            width: 250px;
+            height: 250px;
+        }
+
+        .ref-overlay .ref-label {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            margin-top: 4px;
         }
 
         /* Puzzle Board Section */
         .board-section {
             flex: 1;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -321,7 +322,7 @@
 
         /* Bottom Pieces Tray */
         .pieces-section {
-            height: 160px;
+            height: 130px;
             flex-shrink: 0;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
@@ -647,14 +648,12 @@
             </div>
         </div>
 
-        <div class="game-main">
-            <div class="left-panel">
-                <div class="panel">
-                    <div class="panel-title">Reference</div>
-                    <canvas id="referenceCanvas" class="reference-img"></canvas>
-                </div>
-            </div>
+        <div class="ref-overlay" id="refOverlay" onclick="toggleReference()" title="Click to expand/collapse">
+            <canvas id="referenceCanvas" class="ref-thumb"></canvas>
+            <div class="ref-label">Click to expand</div>
+        </div>
 
+        <div class="game-main">
             <div class="board-section">
                 <div class="puzzle-board" id="puzzleBoard"></div>
             </div>
@@ -858,17 +857,21 @@
 
         // ========== START GAME ==========
         function computePieceSize(grid) {
-            // Measure available board space and size pieces to fill it
+            // Temporarily show game screen to measure
             const gameScreen = document.getElementById('gameScreen');
             gameScreen.classList.add('active');
 
-            const boardEl = document.querySelector('.board-section');
-            const boardRect = boardEl.getBoundingClientRect();
-            // Leave padding inside the board area
-            const availW = boardRect.width - 40;
-            const availH = boardRect.height - 40;
+            // Use full viewport: width minus padding, height minus top-bar and pieces tray
+            const vpW = window.innerWidth;
+            const vpH = window.innerHeight;
+            const topBar = 50;     // top bar height ~50px
+            const piecesTray = 140; // pieces section + margins ~140px
+            const padding = 60;    // padding around board
+
+            const availW = vpW - padding;
+            const availH = vpH - topBar - piecesTray - padding;
             const available = Math.min(availW, availH);
-            // base = available / grid, with tab = base * 0.2
+
             const base = Math.floor(available / grid);
             const tab = Math.max(8, Math.floor(base * 0.2));
             return { base, tab };
@@ -972,10 +975,14 @@
             ctx.restore();
         }
 
+        function toggleReference() {
+            document.getElementById('refOverlay').classList.toggle('expanded');
+        }
+
         function finalize(canvas) {
-            // Reference — size to left panel width
+            // Reference — draw to overlay thumbnail
             const ref = document.getElementById('referenceCanvas');
-            const refSize = document.querySelector('.left-panel')?.getBoundingClientRect().width - 20 || 200;
+            const refSize = 250; // draw at max expanded size for quality
             ref.width = refSize;
             ref.height = refSize;
             ref.getContext('2d').drawImage(canvas, state.tabSize, state.tabSize,

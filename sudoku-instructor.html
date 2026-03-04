@@ -42,18 +42,18 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            padding: 15px 20px;
+            padding: 10px 20px;
         }
 
         /* Header */
         .header {
             text-align: center;
-            padding: 10px 0 15px;
+            padding: 6px 0 8px;
             flex-shrink: 0;
         }
 
         .header h1 {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
             -webkit-background-clip: text;
@@ -71,8 +71,8 @@
 
         .header p {
             color: rgba(255,255,255,0.5);
-            font-size: 0.85rem;
-            margin-top: 5px;
+            font-size: 0.8rem;
+            margin-top: 3px;
         }
 
         /* Main layout */
@@ -104,8 +104,8 @@
             background: rgba(255,255,255,0.03);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 15px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
@@ -1789,8 +1789,8 @@
             if (!gridPanel) return;
             const panelW = gridPanel.getBoundingClientRect().width - 44;
             const vh = window.innerHeight;
-            // Height budget: vh minus header(~80) minus controls(~160) minus padding(~40)
-            const availH = vh - 280;
+            // Height budget: vh minus header(~50) minus controls(~140) minus padding(~30)
+            const availH = vh - 220;
             const available = Math.min(panelW, availH);
             const cellSize = Math.max(44, Math.min(80, Math.floor(available / 9.2)));
             document.querySelector('.sudoku-grid').style.setProperty('--cell-size', cellSize + 'px');
