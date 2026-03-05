@@ -2061,112 +2061,116 @@
             return canvas;
         }
 
-        function adaptiveThreshold(canvas, blockSize, C) {
-            // Adaptive mean threshold — each pixel compared to local neighborhood
-            // This handles varying backgrounds (green/white cells) naturally
+        function findGridBounds(canvas) {
+            // Detect the actual sudoku grid boundary by scanning for
+            // rows/cols with high dark-pixel density (grid lines).
             const ctx = canvas.getContext('2d');
             const w = canvas.width, h = canvas.height;
-            const src = ctx.getImageData(0, 0, w, h);
-            const gray = new Uint8Array(w * h);
-            for (let i = 0; i < gray.length; i++) gray[i] = src.data[i * 4];
+            const data = ctx.getImageData(0, 0, w, h).data;
 
-            // Build integral image for fast local mean
-            const integral = new Float64Array((w + 1) * (h + 1));
-            for (let y = 0; y < h; y++) {
-                let rowSum = 0;
-                for (let x = 0; x < w; x++) {
-                    rowSum += gray[y * w + x];
-                    integral[(y + 1) * (w + 1) + (x + 1)] = rowSum + integral[y * (w + 1) + (x + 1)];
-                }
+            // Compute Otsu threshold for the whole image
+            const hist = new Array(256).fill(0);
+            for (let i = 0; i < data.length; i += 4) hist[data[i]]++;
+            const total = w * h;
+            let sumAll = 0;
+            for (let i = 0; i < 256; i++) sumAll += i * hist[i];
+            let bestT = 128, bestV = 0, wB = 0, sumB = 0;
+            for (let t = 0; t < 256; t++) {
+                wB += hist[t]; if (wB === 0) continue;
+                const wF = total - wB; if (wF === 0) break;
+                sumB += t * hist[t];
+                const d = sumB / wB - (sumAll - sumB) / wF;
+                const v = wB * wF * d * d;
+                if (v > bestV) { bestV = v; bestT = t; }
             }
 
-            const half = Math.floor(blockSize / 2);
-            const out = ctx.createImageData(w, h);
+            // Count dark pixels per row and per column
+            const rowDark = new Array(h).fill(0);
+            const colDark = new Array(w).fill(0);
             for (let y = 0; y < h; y++) {
                 for (let x = 0; x < w; x++) {
-                    const x1 = Math.max(0, x - half), y1 = Math.max(0, y - half);
-                    const x2 = Math.min(w - 1, x + half), y2 = Math.min(h - 1, y + half);
-                    const area = (x2 - x1 + 1) * (y2 - y1 + 1);
-                    const sum = integral[(y2 + 1) * (w + 1) + (x2 + 1)]
-                              - integral[y1 * (w + 1) + (x2 + 1)]
-                              - integral[(y2 + 1) * (w + 1) + x1]
-                              + integral[y1 * (w + 1) + x1];
-                    const localMean = sum / area;
-                    const val = gray[y * w + x] < (localMean - C) ? 0 : 255;
-                    const idx = (y * w + x) * 4;
-                    out.data[idx] = out.data[idx + 1] = out.data[idx + 2] = val;
-                    out.data[idx + 3] = 255;
-                }
-            }
-            ctx.putImageData(out, 0, 0);
-        }
-
-        function findDigitBounds(canvas) {
-            // Find bounding box of dark pixels (the digit)
-            const ctx = canvas.getContext('2d');
-            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
-            let darkCount = 0;
-            for (let y = 0; y < canvas.height; y++) {
-                for (let x = 0; x < canvas.width; x++) {
-                    if (data[(y * canvas.width + x) * 4] === 0) {
-                        darkCount++;
-                        if (x < minX) minX = x;
-                        if (x > maxX) maxX = x;
-                        if (y < minY) minY = y;
-                        if (y > maxY) maxY = y;
+                    if (data[(y * w + x) * 4] < bestT) {
+                        rowDark[y]++;
+                        colDark[x]++;
                     }
                 }
             }
-            const total = canvas.width * canvas.height;
-            const ratio = darkCount / total;
-            return { minX, minY, maxX, maxY, darkCount, ratio };
+
+            // Grid lines span most of the width/height — find the outermost
+            // rows/cols where dark density > 20% of the dimension
+            const rowThresh = w * 0.15;
+            const colThresh = h * 0.15;
+
+            let top = 0, bottom = h - 1, left = 0, right = w - 1;
+            for (let y = 0; y < h; y++) { if (rowDark[y] > rowThresh) { top = y; break; } }
+            for (let y = h - 1; y >= 0; y--) { if (rowDark[y] > rowThresh) { bottom = y; break; } }
+            for (let x = 0; x < w; x++) { if (colDark[x] > colThresh) { left = x; break; } }
+            for (let x = w - 1; x >= 0; x--) { if (colDark[x] > colThresh) { right = x; break; } }
+
+            // Make it square (use the larger dimension)
+            const gw = right - left, gh = bottom - top;
+            const gSize = Math.max(gw, gh);
+            const cx = left + gw / 2, cy = top + gh / 2;
+            const gl = Math.max(0, Math.round(cx - gSize / 2));
+            const gt = Math.max(0, Math.round(cy - gSize / 2));
+            const gs = Math.min(gSize, w - gl, h - gt);
+
+            return { x: gl, y: gt, size: gs };
+        }
+
+        function contrastStretch(canvas) {
+            // Per-cell contrast enhancement: stretch darkest → 0, lightest → 255
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            let min = 255, max = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] < min) min = data[i];
+                if (data[i] > max) max = data[i];
+            }
+            const range = max - min;
+            if (range < 20) return range; // low contrast = likely empty
+            for (let i = 0; i < data.length; i += 4) {
+                const v = Math.round(((data[i] - min) / range) * 255);
+                data[i] = data[i + 1] = data[i + 2] = v;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            return range;
         }
 
         function extractCells(canvas) {
-            const cellSize = canvas.width / 9;
-            const margin = 0.12; // 12% inset to skip grid lines
+            // Auto-detect grid boundaries first
+            const bounds = findGridBounds(canvas);
+            const gridSize = bounds.size;
+            const cellSize = gridSize / 9;
+            const margin = 0.13;
             const cells = [];
-            const FINAL_SIZE = 120;
-            const PAD = 28;
+            const FINAL_SIZE = 140;
+            const PAD = 30;
             const PADDED = FINAL_SIZE + PAD * 2;
 
             for (let r = 0; r < 9; r++) {
                 cells[r] = [];
                 for (let c = 0; c < 9; c++) {
-                    const x = c * cellSize + cellSize * margin;
-                    const y = r * cellSize + cellSize * margin;
-                    const w = cellSize * (1 - 2 * margin);
-                    const h = cellSize * (1 - 2 * margin);
+                    const cx = bounds.x + c * cellSize + cellSize * margin;
+                    const cy = bounds.y + r * cellSize + cellSize * margin;
+                    const cw = cellSize * (1 - 2 * margin);
+                    const ch = cellSize * (1 - 2 * margin);
 
-                    // Extract raw grayscale cell
+                    // Extract grayscale cell
                     const rawCanvas = document.createElement('canvas');
-                    const rw = Math.round(w), rh = Math.round(h);
+                    const rw = Math.round(cw), rh = Math.round(ch);
                     rawCanvas.width = rw;
                     rawCanvas.height = rh;
-                    const rawCtx = rawCanvas.getContext('2d');
-                    rawCtx.drawImage(canvas, Math.round(x), Math.round(y), rw, rh, 0, 0, rw, rh);
+                    rawCanvas.getContext('2d').drawImage(
+                        canvas, Math.round(cx), Math.round(cy), rw, rh, 0, 0, rw, rh
+                    );
 
-                    // Adaptive local threshold (block=Math.floor(cellSize/3), C=10)
-                    const blockSize = Math.max(7, Math.floor(rw / 3) | 1); // ensure odd
-                    adaptiveThreshold(rawCanvas, blockSize, 10);
+                    // Contrast stretch — also returns range for empty detection
+                    const range = contrastStretch(rawCanvas);
+                    const hasDigit = range >= 20;
 
-                    // Ensure black-on-white (invert if majority dark)
-                    const rawData = rawCtx.getImageData(0, 0, rw, rh);
-                    let dk = 0;
-                    for (let i = 0; i < rawData.data.length; i += 4) { if (rawData.data[i] === 0) dk++; }
-                    if (dk > (rawData.data.length / 4) * 0.5) {
-                        for (let i = 0; i < rawData.data.length; i += 4) {
-                            rawData.data[i] = rawData.data[i+1] = rawData.data[i+2] = 255 - rawData.data[i];
-                        }
-                        rawCtx.putImageData(rawData, 0, 0);
-                    }
-
-                    // Find digit bounding box & check if cell has content
-                    const bounds = findDigitBounds(rawCanvas);
-                    const hasDigit = bounds.ratio > 0.008 && bounds.ratio < 0.65 && bounds.darkCount > 8;
-
-                    // Create final cell: crop to digit bbox, center in padded canvas
+                    // Create padded cell for OCR (grayscale — let Tesseract binarize)
                     const cellCanvas = document.createElement('canvas');
                     cellCanvas.width = PADDED;
                     cellCanvas.height = PADDED;
@@ -2175,15 +2179,7 @@
                     cellCtx.fillRect(0, 0, PADDED, PADDED);
 
                     if (hasDigit) {
-                        const bw = bounds.maxX - bounds.minX + 1;
-                        const bh = bounds.maxY - bounds.minY + 1;
-                        // Scale digit to fit FINAL_SIZE while keeping aspect ratio
-                        const scale = Math.min(FINAL_SIZE / bw, FINAL_SIZE / bh) * 0.75;
-                        const dw = Math.round(bw * scale);
-                        const dh = Math.round(bh * scale);
-                        const dx = Math.round((PADDED - dw) / 2);
-                        const dy = Math.round((PADDED - dh) / 2);
-                        cellCtx.drawImage(rawCanvas, bounds.minX, bounds.minY, bw, bh, dx, dy, dw, dh);
+                        cellCtx.drawImage(rawCanvas, 0, 0, rw, rh, PAD, PAD, FINAL_SIZE, FINAL_SIZE);
                     }
 
                     cellCanvas._hasDigit = hasDigit;
@@ -2221,7 +2217,7 @@
                     try {
                         const { data } = await worker.recognize(cellCanvas);
                         const text = data.text.trim().replace(/[^1-9]/g, '');
-                        if (text.length >= 1 && data.confidence > 25) {
+                        if (text.length >= 1 && data.confidence > 15) {
                             result[r][c] = parseInt(text[0]);
                         }
                     } catch(e) {}
