@@ -2035,6 +2035,30 @@
             });
         }
 
+        function otsuThreshold(grayValues) {
+            // Otsu's method — find threshold that minimizes intra-class variance
+            const hist = new Array(256).fill(0);
+            for (const v of grayValues) hist[v]++;
+            const total = grayValues.length;
+            let sumAll = 0;
+            for (let i = 0; i < 256; i++) sumAll += i * hist[i];
+
+            let bestThresh = 128, bestVar = 0;
+            let wB = 0, sumB = 0;
+            for (let t = 0; t < 256; t++) {
+                wB += hist[t];
+                if (wB === 0) continue;
+                const wF = total - wB;
+                if (wF === 0) break;
+                sumB += t * hist[t];
+                const mB = sumB / wB;
+                const mF = (sumAll - sumB) / wF;
+                const variance = wB * wF * (mB - mF) * (mB - mF);
+                if (variance > bestVar) { bestVar = variance; bestThresh = t; }
+            }
+            return bestThresh;
+        }
+
         function preprocessImage(img) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -2044,30 +2068,52 @@
             const sx = (img.width - size) / 2;
             const sy = (img.height - size) / 2;
 
-            // Scale to max 900px
-            const outSize = Math.min(900, size);
+            // Scale to 900px for consistent cell sizes
+            const outSize = Math.min(900, Math.max(size, 450));
             canvas.width = outSize;
             canvas.height = outSize;
 
             ctx.drawImage(img, sx, sy, size, size, 0, 0, outSize, outSize);
 
-            // Grayscale + threshold
+            // Convert to grayscale
             const imageData = ctx.getImageData(0, 0, outSize, outSize);
             const data = imageData.data;
+            const grayValues = [];
             for (let i = 0; i < data.length; i += 4) {
-                const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-                const bw = gray < 140 ? 0 : 255;
+                const gray = Math.round(data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+                data[i] = data[i+1] = data[i+2] = gray;
+                grayValues.push(gray);
+            }
+
+            // Otsu threshold
+            const thresh = otsuThreshold(grayValues);
+            for (let i = 0; i < data.length; i += 4) {
+                const bw = data[i] < thresh ? 0 : 255;
                 data[i] = data[i+1] = data[i+2] = bw;
             }
             ctx.putImageData(imageData, 0, 0);
+
+            // Ensure black-on-white (count dark pixels — if majority dark, invert)
+            let darkCount = 0;
+            for (const v of grayValues) { if (v < thresh) darkCount++; }
+            if (darkCount > grayValues.length * 0.5) {
+                const id2 = ctx.getImageData(0, 0, outSize, outSize);
+                for (let i = 0; i < id2.data.length; i += 4) {
+                    id2.data[i] = id2.data[i+1] = id2.data[i+2] = 255 - id2.data[i];
+                }
+                ctx.putImageData(id2, 0, 0);
+            }
+
             return canvas;
         }
 
         function extractCells(canvas) {
-            const ctx = canvas.getContext('2d');
             const cellSize = canvas.width / 9;
-            const margin = 0.15; // 15% inset to skip borders
+            const margin = 0.2; // 20% inset to avoid grid lines
             const cells = [];
+            const OUTPUT_SIZE = 80; // upscale each cell for better OCR
+            const PAD = 16;        // white padding around digit
+            const PADDED = OUTPUT_SIZE + PAD * 2;
 
             for (let r = 0; r < 9; r++) {
                 cells[r] = [];
@@ -2077,11 +2123,14 @@
                     const w = cellSize * (1 - 2 * margin);
                     const h = cellSize * (1 - 2 * margin);
 
+                    // Create padded, upscaled cell — white background with digit centered
                     const cellCanvas = document.createElement('canvas');
-                    cellCanvas.width = Math.round(w);
-                    cellCanvas.height = Math.round(h);
+                    cellCanvas.width = PADDED;
+                    cellCanvas.height = PADDED;
                     const cellCtx = cellCanvas.getContext('2d');
-                    cellCtx.drawImage(canvas, Math.round(x), Math.round(y), Math.round(w), Math.round(h), 0, 0, cellCanvas.width, cellCanvas.height);
+                    cellCtx.fillStyle = '#fff';
+                    cellCtx.fillRect(0, 0, PADDED, PADDED);
+                    cellCtx.drawImage(canvas, Math.round(x), Math.round(y), Math.round(w), Math.round(h), PAD, PAD, OUTPUT_SIZE, OUTPUT_SIZE);
 
                     cells[r][c] = cellCanvas;
                 }
@@ -2089,14 +2138,20 @@
             return cells;
         }
 
-        function isDarkPixelRatio(canvas, threshold = 0.05) {
+        function hasDarkPixels(canvas, threshold = 0.03) {
             const ctx = canvas.getContext('2d');
             const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let dark = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                if (data[i] < 128) dark++;
+            let dark = 0, total = 0;
+            // Only check inner area (skip the padding border)
+            const pad = 16;
+            for (let y = pad; y < canvas.height - pad; y++) {
+                for (let x = pad; x < canvas.width - pad; x++) {
+                    const i = (y * canvas.width + x) * 4;
+                    if (data[i] < 128) dark++;
+                    total++;
+                }
             }
-            return dark / (data.length / 4) > threshold;
+            return (dark / total) > threshold;
         }
 
         async function ocrCells(cellCanvases) {
@@ -2122,14 +2177,13 @@
                     if (progressEl) progressEl.textContent = `Cell ${processed}/${total} (Row ${r+1})`;
 
                     const cellCanvas = cellCanvases[r][c];
-                    if (!isDarkPixelRatio(cellCanvas)) continue;
+                    if (!hasDarkPixels(cellCanvas)) continue;
 
                     try {
                         const { data } = await worker.recognize(cellCanvas);
-                        const text = data.text.trim();
-                        const num = parseInt(text);
-                        if (num >= 1 && num <= 9) {
-                            result[r][c] = num;
+                        const text = data.text.trim().replace(/[^1-9]/g, '');
+                        if (text.length === 1) {
+                            result[r][c] = parseInt(text);
                         }
                     } catch(e) {}
                 }
