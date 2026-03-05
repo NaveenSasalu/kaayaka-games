@@ -42,13 +42,13 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            padding: 10px 20px;
+            padding: 6px 20px;
         }
 
         /* Header */
         .header {
             text-align: center;
-            padding: 6px 0 8px;
+            padding: 4px 0 4px;
             flex-shrink: 0;
         }
 
@@ -79,7 +79,7 @@
         .main {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 25px;
+            gap: 15px;
             flex: 1;
             min-height: 0;
             max-width: 1400px;
@@ -97,7 +97,7 @@
         .grid-panel {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 6px;
         }
 
         .grid-card {
@@ -105,7 +105,7 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 16px;
-            padding: 15px;
+            padding: 10px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
@@ -129,7 +129,7 @@
             justify-content: center;
             font-size: clamp(18px, calc(var(--cell-size, 56px) * 0.45), 36px);
             font-weight: 600;
-            background: rgba(30, 30, 60, 0.8);
+            background: rgba(35, 35, 65, 0.85);
             color: #fff;
             border: none;
             outline: none;
@@ -140,7 +140,7 @@
 
         .sudoku-grid input.cell {
             cursor: text;
-            caret-color: #f5576c;
+            caret-color: #e2c563;
         }
 
         .sudoku-grid input.cell:focus {
@@ -150,18 +150,18 @@
 
         .sudoku-grid .cell.given {
             background: rgba(20, 20, 50, 0.9);
-            color: #f5576c;
+            color: #e2c563;
         }
 
         .sudoku-grid .cell.solved {
-            color: #4ade80;
+            color: #5eead4;
             animation: popIn 0.3s ease;
-            text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+            text-shadow: 0 0 10px rgba(94, 234, 212, 0.5);
         }
 
         .sudoku-grid .cell.highlight {
-            background: rgba(74, 222, 128, 0.25) !important;
-            box-shadow: inset 0 0 20px rgba(74, 222, 128, 0.4);
+            background: rgba(94, 234, 212, 0.25) !important;
+            box-shadow: inset 0 0 20px rgba(94, 234, 212, 0.4);
         }
 
         .sudoku-grid .cell.error {
@@ -183,9 +183,9 @@
         }
 
         /* 3x3 box borders */
-        .sudoku-grid .cell:nth-child(3n) { border-right: 2px solid rgba(245, 87, 108, 0.6); }
+        .sudoku-grid .cell:nth-child(3n) { border-right: 2px solid rgba(255, 255, 255, 0.35); }
         .sudoku-grid .cell:nth-child(n+19):nth-child(-n+27),
-        .sudoku-grid .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid rgba(245, 87, 108, 0.6); }
+        .sudoku-grid .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid rgba(255, 255, 255, 0.35); }
         .sudoku-grid .cell:nth-child(9n) { border-right: none; }
         .sudoku-grid .cell:nth-child(n+73) { border-bottom: none; }
 
@@ -197,7 +197,7 @@
         }
 
         .btn {
-            padding: 10px 16px;
+            padding: 8px 14px;
             font-size: 13px;
             font-weight: 600;
             font-family: inherit;
@@ -248,7 +248,7 @@
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 12px;
-            padding: 12px;
+            padding: 8px 12px;
         }
 
         .option-card label {
@@ -314,7 +314,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
+            padding: 6px 12px;
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 12px;
@@ -486,7 +486,7 @@
         }
 
         .step-result .cell-ref { color: #4facfe; font-weight: 600; }
-        .step-result .value { color: #f5576c; font-weight: 700; font-size: 15px; }
+        .step-result .value { color: #e2c563; font-weight: 700; font-size: 15px; }
 
         .step-content {
             font-size: 13px;
@@ -503,7 +503,7 @@
             font-weight: 600;
             font-family: monospace;
         }
-        .step-content .value { color: #f5576c; font-weight: 700; }
+        .step-content .value { color: #e2c563; font-weight: 700; }
 
         /* Elimination list */
         .elimination-list {
@@ -579,10 +579,10 @@
         }
 
         .candidate-num.final {
-            background: linear-gradient(135deg, #4ade80, #22c55e);
+            background: linear-gradient(135deg, #5eead4, #2dd4bf);
             color: #000;
             transform: scale(1.15);
-            box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+            box-shadow: 0 0 15px rgba(94, 234, 212, 0.4);
         }
 
         /* Conclusion */
@@ -793,7 +793,7 @@
         }
         .kaayaka-branding {
             position: fixed;
-            bottom: 12px;
+            bottom: 4px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
@@ -816,7 +816,104 @@
             color: #ff6b6b;
             font-size: 13px;
         }
+
+        /* Laptop scroll fix */
+        @media (max-height: 700px) {
+            .header p { display: none; }
+            .header { padding: 2px 0; }
+            .app { padding: 4px 20px; }
+            .grid-panel { gap: 4px; }
+            .grid-card { padding: 8px; }
+            .option-card { padding: 6px 10px; }
+            .option-card label { margin-bottom: 3px; }
+            .toggle-row { padding: 4px 10px; }
+            .btn { padding: 6px 12px; }
+        }
+
+        /* Verify result styles */
+        .verify-result {
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .verify-result.valid {
+            background: rgba(94, 234, 212, 0.15);
+            border: 1px solid rgba(94, 234, 212, 0.3);
+            color: #5eead4;
+        }
+        .verify-result.invalid {
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+        .verify-result.warning {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        /* OCR overlay */
+        .ocr-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ocr-overlay .ocr-card {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+        }
+        .ocr-overlay .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #e2c563;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .ocr-overlay .ocr-status {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 8px;
+        }
+        .ocr-overlay .ocr-progress {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 15px;
+        }
+        .ocr-overlay .btn-cancel {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ocr-overlay .btn-cancel:hover {
+            background: rgba(255,255,255,0.2);
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
     <a href="index.html" class="kaayaka-back-btn">← Games</a>
@@ -837,7 +934,10 @@
                     <button class="btn btn-primary" onclick="solvePuzzle()">🎓 Teach Me</button>
                     <button class="btn btn-secondary" onclick="nextStep()" id="nextBtn" disabled>➡️ Next</button>
                     <button class="btn btn-secondary" onclick="autoSolve()" id="autoBtn" disabled>▶️ Auto</button>
+                    <button class="btn btn-secondary" onclick="verifyPuzzle()">✅ Verify</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('ocrInput').click()">📷 Scan</button>
                     <button class="btn btn-secondary" onclick="clearGrid()">🗑️ Clear</button>
+                    <input type="file" id="ocrInput" accept="image/*" capture="environment" style="display:none" onchange="handleOCRFile(this)">
                 </div>
 
                 <div class="options-row">
@@ -1543,7 +1643,7 @@
                 const seen = new Set();
                 for (let c = 0; c < 9; c++) {
                     if (grid[r][c] !== 0) {
-                        if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate in Row ${r + 1}` };
+                        if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate ${grid[r][c]} in Row ${r + 1}` };
                         seen.add(grid[r][c]);
                     }
                 }
@@ -1552,12 +1652,78 @@
                 const seen = new Set();
                 for (let r = 0; r < 9; r++) {
                     if (grid[r][c] !== 0) {
-                        if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate in Column ${getColName(c)}` };
+                        if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate ${grid[r][c]} in Column ${getColName(c)}` };
                         seen.add(grid[r][c]);
                     }
                 }
             }
+            for (let br = 0; br < 3; br++) {
+                for (let bc = 0; bc < 3; bc++) {
+                    const seen = new Set();
+                    for (let r = br * 3; r < br * 3 + 3; r++) {
+                        for (let c = bc * 3; c < bc * 3 + 3; c++) {
+                            if (grid[r][c] !== 0) {
+                                if (seen.has(grid[r][c])) return { valid: false, error: `Duplicate ${grid[r][c]} in ${getBoxName(r, c)}` };
+                                seen.add(grid[r][c]);
+                            }
+                        }
+                    }
+                }
+            }
             return { valid: true };
+        }
+
+        function countSolutions(grid, limit = 2) {
+            const g = deepCopy(grid);
+            let count = 0;
+            function solve() {
+                if (count >= limit) return;
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (g[r][c] === 0) {
+                            for (let n = 1; n <= 9; n++) {
+                                if (isValid(g, r, c, n)) {
+                                    g[r][c] = n;
+                                    solve();
+                                    if (count >= limit) return;
+                                    g[r][c] = 0;
+                                }
+                            }
+                            return;
+                        }
+                    }
+                }
+                count++;
+            }
+            solve();
+            return count;
+        }
+
+        function verifyPuzzle() {
+            updateGridFromInput();
+            const container = document.getElementById('stepsContainer');
+
+            let hasNums = false;
+            for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (grid[r][c] !== 0) hasNums = true;
+            if (!hasNums) {
+                container.innerHTML = '<div class="verify-result invalid">⚠️ Enter a puzzle first.</div>';
+                return;
+            }
+
+            const validation = validatePuzzle(grid);
+            if (!validation.valid) {
+                container.innerHTML = `<div class="verify-result invalid">❌ Constraint Violation — ${validation.error}</div>`;
+                return;
+            }
+
+            const solutions = countSolutions(grid);
+            if (solutions === 0) {
+                container.innerHTML = '<div class="verify-result invalid">❌ No Solution — this puzzle is unsolvable.</div>';
+            } else if (solutions === 1) {
+                container.innerHTML = '<div class="verify-result valid">✅ Valid Puzzle — unique solution exists.</div>';
+            } else {
+                container.innerHTML = '<div class="verify-result warning">⚠️ Multiple Solutions — puzzle is under-constrained.</div>';
+            }
         }
 
         // ========== UI ==========
@@ -1784,13 +1950,202 @@
             _origClearGrid();
         };
 
+        // ========== OCR SCAN ==========
+        let ocrCancelled = false;
+
+        function showOCROverlay() {
+            const html = `<div class="ocr-overlay" id="ocrOverlay">
+                <div class="ocr-card">
+                    <div class="spinner"></div>
+                    <div class="ocr-status" id="ocrStatus">Preparing image...</div>
+                    <div class="ocr-progress" id="ocrProgress"></div>
+                    <button class="btn-cancel" onclick="cancelOCR()">Cancel</button>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function hideOCROverlay() {
+            document.getElementById('ocrOverlay')?.remove();
+        }
+
+        function cancelOCR() {
+            ocrCancelled = true;
+            hideOCROverlay();
+        }
+
+        async function handleOCRFile(input) {
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+
+            ocrCancelled = false;
+            showOCROverlay();
+
+            try {
+                const img = await loadImage(file);
+                if (ocrCancelled) return;
+
+                document.getElementById('ocrStatus').textContent = 'Processing image...';
+                const canvas = preprocessImage(img);
+                if (ocrCancelled) return;
+
+                const cellCanvases = extractCells(canvas);
+                if (ocrCancelled) return;
+
+                document.getElementById('ocrStatus').textContent = 'Recognizing digits...';
+                const recognized = await ocrCells(cellCanvases);
+                if (ocrCancelled) return;
+
+                hideOCROverlay();
+
+                // Populate grid
+                grid = Array(9).fill(null).map(() => Array(9).fill(0));
+                givenCells.clear();
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        const val = recognized[r][c];
+                        if (val >= 1 && val <= 9) {
+                            grid[r][c] = val;
+                            givenCells.add(`${r},${c}`);
+                        }
+                    }
+                }
+                renderGrid();
+                saveSudokuState();
+                document.getElementById('presetSelect').value = '';
+
+                const container = document.getElementById('stepsContainer');
+                const count = givenCells.size;
+                container.innerHTML = `<div class="info-box"><strong>📷 Scanned!</strong> Recognized ${count} digits. Please verify and correct any errors before solving.</div>`;
+            } catch (err) {
+                hideOCROverlay();
+                if (!ocrCancelled) {
+                    document.getElementById('stepsContainer').innerHTML = `<div class="error-message">⚠️ OCR failed: ${err.message}</div>`;
+                }
+            }
+        }
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function preprocessImage(img) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Center-crop to square
+            const size = Math.min(img.width, img.height);
+            const sx = (img.width - size) / 2;
+            const sy = (img.height - size) / 2;
+
+            // Scale to max 900px
+            const outSize = Math.min(900, size);
+            canvas.width = outSize;
+            canvas.height = outSize;
+
+            ctx.drawImage(img, sx, sy, size, size, 0, 0, outSize, outSize);
+
+            // Grayscale + threshold
+            const imageData = ctx.getImageData(0, 0, outSize, outSize);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+                const bw = gray < 140 ? 0 : 255;
+                data[i] = data[i+1] = data[i+2] = bw;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        function extractCells(canvas) {
+            const ctx = canvas.getContext('2d');
+            const cellSize = canvas.width / 9;
+            const margin = 0.15; // 15% inset to skip borders
+            const cells = [];
+
+            for (let r = 0; r < 9; r++) {
+                cells[r] = [];
+                for (let c = 0; c < 9; c++) {
+                    const x = c * cellSize + cellSize * margin;
+                    const y = r * cellSize + cellSize * margin;
+                    const w = cellSize * (1 - 2 * margin);
+                    const h = cellSize * (1 - 2 * margin);
+
+                    const cellCanvas = document.createElement('canvas');
+                    cellCanvas.width = Math.round(w);
+                    cellCanvas.height = Math.round(h);
+                    const cellCtx = cellCanvas.getContext('2d');
+                    cellCtx.drawImage(canvas, Math.round(x), Math.round(y), Math.round(w), Math.round(h), 0, 0, cellCanvas.width, cellCanvas.height);
+
+                    cells[r][c] = cellCanvas;
+                }
+            }
+            return cells;
+        }
+
+        function isDarkPixelRatio(canvas, threshold = 0.05) {
+            const ctx = canvas.getContext('2d');
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let dark = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] < 128) dark++;
+            }
+            return dark / (data.length / 4) > threshold;
+        }
+
+        async function ocrCells(cellCanvases) {
+            const result = Array(9).fill(null).map(() => Array(9).fill(0));
+
+            const worker = await Tesseract.createWorker('eng', 1, {
+                logger: () => {}
+            });
+            await worker.setParameters({
+                tessedit_char_whitelist: '123456789',
+                tessedit_pageseg_mode: '10'
+            });
+
+            let processed = 0;
+            const total = 81;
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (ocrCancelled) { await worker.terminate(); return result; }
+
+                    processed++;
+                    const progressEl = document.getElementById('ocrProgress');
+                    if (progressEl) progressEl.textContent = `Cell ${processed}/${total} (Row ${r+1})`;
+
+                    const cellCanvas = cellCanvases[r][c];
+                    if (!isDarkPixelRatio(cellCanvas)) continue;
+
+                    try {
+                        const { data } = await worker.recognize(cellCanvas);
+                        const text = data.text.trim();
+                        const num = parseInt(text);
+                        if (num >= 1 && num <= 9) {
+                            result[r][c] = num;
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            await worker.terminate();
+            return result;
+        }
+
         function sizeSudokuGrid() {
             const gridPanel = document.querySelector('.grid-panel');
             if (!gridPanel) return;
             const panelW = gridPanel.getBoundingClientRect().width - 44;
             const vh = window.innerHeight;
             // Height budget: vh minus header(~50) minus controls(~140) minus padding(~30)
-            const availH = vh - 220;
+            const availH = vh - 180;
             const available = Math.min(panelW, availH);
             const cellSize = Math.max(44, Math.min(80, Math.floor(available / 9.2)));
             document.querySelector('.sudoku-grid').style.setProperty('--cell-size', cellSize + 'px');
